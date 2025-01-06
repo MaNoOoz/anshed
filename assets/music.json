@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Song 1",
+    "url": "https://firebasestorage.googleapis.com/.../song1.mp3"
+  },
+  {
+    "name": "Song 2",
+    "url": "https://firebasestorage.googleapis.com/.../song2.mp3"
+  }
+]
