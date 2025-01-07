@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/song.dart';
 
 class PlayerController extends GetxController {
@@ -17,27 +18,35 @@ class PlayerController extends GetxController {
   var downloadedSongs = <String>{}.obs; // Set of downloaded song URLs
   var currentIndex = 0.obs;
 
+  var volume = 1.0.obs;
+
+  void setVolume(double newVolume) {
+    volume.value = newVolume;
+  }
+
   final DefaultCacheManager cacheManager = DefaultCacheManager();
 
   @override
   void onInit() async {
     super.onInit();
-    await _checkFirstTimeUser();
-    await _fetchMusicUrls();
+    // await checkFirstTimeUser();
+    await fetchMusicUrls();
     _initListeners();
+    player.setVolume(volume.value);
+    ever(volume, (value) => player.setVolume(value));
   }
 
-  Future<void> _checkFirstTimeUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstTime = prefs.getBool('isFirstTime') ?? true;
+  // Future<void> _checkFirstTimeUser() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final isFirstTime = prefs.getBool('isFirstTime') ?? true;
+  //
+  //   if (isFirstTime || await _hasNewSongs()) {
+  //     _showDownloadDialog();
+  //     await prefs.setBool('isFirstTime', false); // Mark as not first time
+  //   }
+  // }
 
-    if (isFirstTime || await _hasNewSongs()) {
-      _showDownloadDialog();
-      await prefs.setBool('isFirstTime', false); // Mark as not first time
-    }
-  }
-
-  Future<bool> _hasNewSongs() async {
+  Future<bool> hasNewSongs() async {
     final cachedUrls = <String>{};
     for (var song in songList) {
       var file = await cacheManager.getFileFromCache(song.url);
@@ -49,7 +58,7 @@ class PlayerController extends GetxController {
     return !cachedUrls.containsAll(serverUrls);
   }
 
-  Future<void> _fetchMusicUrls() async {
+  Future<void> fetchMusicUrls() async {
     final query = QueryBuilder<ParseObject>(ParseObject('Song'));
     final response = await query.query();
 
@@ -57,13 +66,13 @@ class PlayerController extends GetxController {
       songList.value = response.results!
           .map((result) => Song.fromParseObject(result as ParseObject))
           .toList();
-      await _checkDownloadedSongs();
+      await checkDownloadedSongs();
     } else {
       Logger().e('Failed to load songs: ${response.error?.message}');
     }
   }
 
-  Future<void> _checkDownloadedSongs() async {
+  Future<void> checkDownloadedSongs() async {
     for (var song in songList) {
       var file = await cacheManager.getFileFromCache(song.url);
       if (file != null) {
@@ -72,7 +81,7 @@ class PlayerController extends GetxController {
     }
   }
 
-  void _showDownloadDialog() {
+  void showDownloadDialog() {
     Get.defaultDialog(
       title: 'Download Songs',
       middleText: 'Would you like to download all songs for offline use?',
@@ -105,6 +114,38 @@ class PlayerController extends GetxController {
     } catch (e) {
       Logger().e('Error downloading file: $e');
       return '';
+    }
+  }
+
+  /// New Method to download a specific song
+  Future<void> downloadSong(int index) async {
+    if (index < 0 || index >= songList.length) return;
+
+    final song = songList[index];
+    try {
+      var file = await cacheManager.getSingleFile(song.url);
+      downloadedSongs.add(song.url); // Mark as downloaded
+      Logger().d('Song downloaded: ${song.name}');
+      Get.snackbar(
+        'Download Complete',
+        '${song.name} is now available offline.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+      );
+    } catch (e) {
+      Logger().e('Error downloading song: $e');
+      Get.snackbar(
+        'Download Failed',
+        'Could not download ${song.name}.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.error, color: Colors.white),
+      );
     }
   }
 
@@ -145,7 +186,8 @@ class PlayerController extends GetxController {
   }
 
   void previousSong() {
-    currentIndex.value = (currentIndex.value - 1 + songList.length) % songList.length;
+    currentIndex.value =
+        (currentIndex.value - 1 + songList.length) % songList.length;
     playSong(currentIndex.value);
   }
 

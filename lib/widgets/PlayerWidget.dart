@@ -3,9 +3,12 @@ import 'package:get/get.dart';
 
 import '../controllers/PlayerController.dart';
 import 'SeekBar.dart';
+import 'VolDialoag.dart';
 
 class PlayerWidget extends StatelessWidget {
   final PlayerController controller = Get.put(PlayerController());
+
+  PlayerWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +19,24 @@ class PlayerWidget extends StatelessWidget {
           ? controller.songList[currentIndex].name
           : 'No song playing';
 
-      return SizedBox(
-        height: 200,
+      return Container(
+        height: 300,
+        color: Colors.green.withAlpha(22),
         child: Column(
           children: [
+            SizedBox(
+              height: 22,
+            ),
+            // Slider(
+            //   value: controller.volume.value,
+            //   onChanged: (newVolume) {
+            //     controller.setVolume(newVolume);
+            //   },
+            //   min: 0,
+            //   max: 1,
+            // ),
+            // Text(
+            // 'Volume: ${(controller.volume.value * 100).toStringAsFixed(0)}%'),
             // Title
             Expanded(
               flex: 1,
@@ -71,9 +88,12 @@ class PlayerWidget extends StatelessWidget {
                     iconSize: 36,
                   ),
                   IconButton(
-                    icon: Icon(isPlaying ? Icons.pause_circle_filled_outlined : Icons.play_arrow_rounded),
+                    icon: Icon(isPlaying
+                        ? Icons.pause_circle_filled_outlined
+                        : Icons.play_arrow_rounded),
                     iconSize: 64.0,
-                    color: isPlaying ? Colors.green : Colors.white, // Highlight when playing
+                    color: isPlaying ? Colors.green : Colors.white,
+                    // Highlight when playing
                     onPressed: () async {
                       if (isPlaying) {
                         controller.pause();
@@ -90,11 +110,12 @@ class PlayerWidget extends StatelessWidget {
                     icon: const Icon(Icons.navigate_next_outlined),
                     iconSize: 36,
                   ),
-                  IconButton(
-                    onPressed: controller.player.stop,
-                    icon: const Icon(Icons.stop_circle_rounded),
-                    iconSize: 36,
-                  ),
+                  VolumeControlScreen(),
+                  // IconButton(
+                  //   onPressed: controller.player.stop,
+                  //   icon: const Icon(Icons.stop_circle_rounded),
+                  //   iconSize: 36,
+                  // ),
                 ],
               ),
             ),

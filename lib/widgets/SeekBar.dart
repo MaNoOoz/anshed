@@ -8,7 +8,8 @@ class SeekBar extends StatefulWidget {
   final Duration bufferedPosition;
   final ValueChanged<Duration>? onChanged;
 
-  SeekBar({
+  const SeekBar({
+    super.key,
     required this.duration,
     required this.position,
     required this.bufferedPosition,
@@ -24,7 +25,7 @@ class _SeekBarState extends State<SeekBar> {
 
   @override
   Widget build(BuildContext context) {
-    double _width = MediaQuery.of(context).size.width;
+    double width = MediaQuery.of(context).size.width;
     return Column(
       children: [
         SliderTheme(
@@ -51,7 +52,7 @@ class _SeekBarState extends State<SeekBar> {
             ),
           ),
           child: Container(
-            margin: EdgeInsets.symmetric(horizontal: _width * 0.05),
+            margin: EdgeInsets.symmetric(horizontal: width * 0.05),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

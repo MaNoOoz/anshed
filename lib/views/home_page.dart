@@ -7,44 +7,33 @@ import '../widgets/music_tile.dart';
 
 class HomePage extends StatelessWidget {
   final PlayerController playerController = Get.put(PlayerController());
-  final bool isFirstTime;
-
-  HomePage({required this.isFirstTime});
-
-  void _showWelcomeDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Welcome!'),
-          content: const Text('This is your first time using the app.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (isFirstTime) {
-      Future.delayed(Duration.zero, () => _showWelcomeDialog(context));
-    }
-    if (playerController.songList.length < 0) {
-      return CircularProgressIndicator();
-    }
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black12,
+        appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          title: Text("أناشيد الثورة السورية"),
+          actions: [
+            IconButton(
+                onPressed: () async {
 
-    return Scaffold(
-      appBar: AppBar(centerTitle: true, title: Text("أناشيد الثورة السورية")),
-      body: Column(
-        children: [
-          Expanded(
-            child: Obx(() {
-              return ListView.builder(
+                  await playerController.hasNewSongs();
+                  await playerController.checkDownloadedSongs();
+                   playerController.showDownloadDialog();
+
+                },
+                icon: Icon(Icons.download_for_offline))
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
                 itemCount: playerController.songList.length,
                 itemBuilder: (context, index) {
                   return MusicTile(
@@ -52,11 +41,13 @@ class HomePage extends StatelessWidget {
                     index: index,
                   );
                 },
-              );
-            }),
-          ),
-          PlayerWidget(),
-        ],
+              ),
+            ),
+
+            // PlayerWidget at the bottom
+            PlayerWidget(),
+          ],
+        ),
       ),
     );
   }

@@ -236,10 +236,10 @@ packages:
     dependency: transitive
     description:
       name: js
-      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
+      sha256: c1b2e9b5ea78c45e1a0788d29606ba27dc5f71f019f32ca5140f61ef071838cf
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.7"
+    version: "0.7.1"
   just_audio:
     dependency: "direct main"
     description:
@@ -264,6 +264,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.11"
+  just_audio_windows:
+    dependency: "direct main"
+    description:
+      name: just_audio_windows
+      sha256: b1ba5305d841c0e3883644e20fc11aaa23f28cfdd43ec20236d1e119a402ef29
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   leak_tracker:
     dependency: transitive
     description:
@@ -516,10 +524,10 @@ packages:
     dependency: transitive
     description:
       name: sembast
-      sha256: cf1aa59677551d54d7ed85a1c5c3396fc06d01aa9f8fabd443a9b270f8f14760
+      sha256: b3dde17154b2233d039fe3c386871d2ccddb4f31e058502c4036b03858e2ff5f
       url: "https://pub.dev"
     source: hosted
-    version: "3.8.1"
+    version: "3.8.1+1"
   sembast_web:
     dependency: transitive
     description:
@@ -529,7 +537,7 @@ packages:
     source: hosted
     version: "2.2.0"
   shared_preferences:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: shared_preferences
       sha256: d3bbe5553a986e83980916ded2f0b435ef2e1893dfaa29d5a7a790d0eca12180
@@ -753,10 +761,10 @@ packages:
     dependency: transitive
     description:
       name: web_socket_channel
-      sha256: d88238e5eac9a42bb43ca4e721edba3c08c6354d4a53063afaa568516217621b
+      sha256: "939ab60734a4f8fa95feacb55804fa278de28bdeef38e616dc08e44a84adea23"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.0"
+    version: "2.4.3"
   win32:
     dependency: transitive
     description:

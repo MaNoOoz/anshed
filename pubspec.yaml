@@ -32,11 +32,11 @@ dependencies:
     sdk: flutter
   get:
   just_audio:
+  just_audio_windows:
   parse_server_sdk_flutter: ^9.0.0
   solid_bottom_sheet:
   audio_session:
   flutter_cache_manager:
-  shared_preferences:
   audio_service:
   permission_handler:
   logger:
