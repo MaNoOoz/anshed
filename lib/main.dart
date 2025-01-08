@@ -1,7 +1,7 @@
+import 'package:anshed/controllers/PlayerController.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'views/home_page.dart';
 
@@ -23,22 +23,63 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: Brightness.dark,
-        ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            fontSize: 44,
-            fontWeight: FontWeight.bold,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.dark,
+          ),
+          textTheme: const TextTheme(
+            displayLarge: TextStyle(
+              fontSize: 44,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
+        textDirection: TextDirection.rtl,
+        home: _bulidHome());
+  }
+}
+
+_bulidHome() {
+  var controller = Get.put(PlayerController());
+
+  return HomePage();
+
+  if (controller.initialized && controller.songList.isNotEmpty) {
+    // Logger().e(controller.initialized);
+    // return Container(
+    //   color: Colors.green,
+    // );
+  } else {
+    return Scaffold(
+      body: Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 22,),
+
+            // Container(
+            //   width: double.infinity,
+            //   child: IconButton(
+            //     icon: const Icon(Icons.door_back_door_outlined),
+            //     onPressed: ()  {
+            //        controller.fetchMusicUrls();
+            //
+            //     },
+            //     tooltip: 'Refresh Songs',
+            //   ),
+            // ),
+            // GestureDetector(
+            //   child: Center(child: Text("دخول")),
+            //   onTap: () {
+            //     controller.update();
+            //
+            //   },
+            // )
+          ],
+        ),
       ),
-      textDirection: TextDirection.rtl,
-      home: HomePage(),
     );
   }
-
 }

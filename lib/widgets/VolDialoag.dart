@@ -68,11 +68,9 @@ void showVolumeDialog(BuildContext context) {
 class VolumeControlScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final PlayerController controller = Get.put(PlayerController());
-
     return Container(
       child: PopupMenuButton(
-        icon: Icon(Icons.volume_up),
+        icon: Icon(Icons.volume_up_rounded,size: 40,color: Colors.black,),
         itemBuilder: (context) => [
           PopupMenuItem(
             child: VolumeSlider(), // Use the VolumeSlider widget
