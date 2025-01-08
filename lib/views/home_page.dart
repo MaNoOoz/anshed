@@ -2,7 +2,7 @@ import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:logger/logger.dart';
+import 'package:share/share.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../controllers/PlayerController.dart';
@@ -41,38 +41,51 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPlaying = c.isPlaying.value;
-    final currentIndex = c.currentIndex.value;
-    final currentSongName =
-        currentIndex != -1 ? c.songList[currentIndex].name : 'No song playing';
-
     return SafeArea(
       child: Scaffold(
-          backgroundColor: Colors.black12,
-          appBar: AppBar(
-            centerTitle: true,
-            backgroundColor: Colors.transparent,
-            title: Text("أناشيد الثورة السورية"),
-            actions: [
-              Text("${c.songList.length}"),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () async {
-                  Logger().e("${c.songList.length}");
-                  c.update();
-                  await c.fetchMusicUrls();
-                },
-                tooltip: 'Refresh Songs',
-              ),
-              IconButton(
-                onPressed: () {
-                  c.showDownloadDialog();
-                },
-                icon: Icon(Icons.download_for_offline),
-              ),
-            ],
-          ),
-          body: Obx(() {
+        backgroundColor: Colors.black12,
+        appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          title: Text("أناشيد الثورة السورية"),
+          actions: [
+            Text("${c.songList.length}"),
+            PopupMenuButton<String>(
+              onSelected: (String result) {
+                switch (result) {
+                  case 'Refresh':
+                    c.update();
+                    c.fetchMusicUrls();
+                    break;
+                  case 'Download':
+                    c.showDownloadDialog();
+                    break;
+                  case 'Share':
+                    final appLink = 'https://example.com'; // todo
+                    Share.share('Check out this app: $appLink');
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'Refresh',
+                  child: Text('تحديث الأغاني'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Download',
+                  child: Text('تحميل الأغاني'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Share',
+                  child: Text('مشاركة التطبيق'),
+                ),
+              ],
+              icon: Icon(Icons.settings),
+            ),
+          ],
+        ),
+        body: Obx(
+          () {
             if (c.songList.isEmpty) {
               return Center(child: Text('No songs available'));
             }
@@ -101,9 +114,9 @@ class HomePage extends StatelessWidget {
                           minHeight: 300,
                           maxHeight: 300,
                           panel: playerWidget(
-                              isPlaying: isPlaying,
-                              currentIndex: currentIndex,
-                              currentSongName: currentSongName),
+                              isPlaying: c.isPlaying.value,
+                              currentIndex: c.currentIndex.value,
+                              currentSongName: c.currentSongName.value),
                           // collapsed: _buildMiniPlayer(context),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(11),
@@ -116,7 +129,9 @@ class HomePage extends StatelessWidget {
               );
             }
             return Center(child: Text('No songs available'));
-          })),
+          },
+        ),
+      ),
     );
   }
 

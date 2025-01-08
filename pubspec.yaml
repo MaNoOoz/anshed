@@ -43,6 +43,7 @@ dependencies:
   audio_service:
   permission_handler:
   logger:
+  share:
   dio:
   path_provider:
   #  flutter_local_notifications:

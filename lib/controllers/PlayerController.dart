@@ -28,6 +28,12 @@ class PlayerController extends GetxController {
     await fetchMusicUrls();
     await _checkNewAndDownloadedSongs();
     _initListeners();
+
+    currentSongName = currentSongName;
+    currentIndex.value != -1
+        ? songList[currentIndex.value].name
+        : 'No song playing';
+    isPlaying = isPlaying;
     player.setVolume(volume.value);
     ever(volume, (value) => player.setVolume(value));
   }
@@ -82,7 +88,6 @@ class PlayerController extends GetxController {
   }
 
   // Api ================================================
-
 
   Future<void> fetchMusicUrls() async {
     final query = QueryBuilder<ParseObject>(ParseObject('Song'))
@@ -186,5 +191,4 @@ class PlayerController extends GetxController {
       ),
     );
   }
-
 }
