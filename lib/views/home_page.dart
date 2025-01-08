@@ -2,7 +2,6 @@ import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:share/share.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../controllers/PlayerController.dart';
@@ -11,33 +10,6 @@ import '../widgets/music_tile.dart';
 
 class HomePage extends StatelessWidget {
   final PlayerController c = Get.put(PlayerController());
-
-  Widget _buildMiniPlayer(BuildContext context) {
-    return Container(
-      color: Colors.black26,
-      child: ListTile(
-        leading: const Icon(Icons.music_note),
-        title: Obx(() {
-          final currentSongName = c.currentIndex.value != -1
-              ? c.songList[c.currentIndex.value].name
-              : 'No song playing';
-          return Text(
-            currentSongName,
-            overflow: TextOverflow.ellipsis,
-          );
-        }),
-        trailing: Obx(() {
-          final isPlaying = c.isPlaying.value;
-          return IconButton(
-            icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-            onPressed: () {
-              isPlaying ? c.pause() : c.player.play();
-            },
-          );
-        }),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,8 +33,8 @@ class HomePage extends StatelessWidget {
                     c.showDownloadDialog();
                     break;
                   case 'Share':
-                    final appLink = 'https://example.com'; // todo
-                    Share.share('Check out this app: $appLink');
+                    // final appLink = 'https://example.com'; // todo
+                    // Share.share('Check out this app: $appLink');
                     break;
                 }
               },

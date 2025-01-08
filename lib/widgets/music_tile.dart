@@ -14,7 +14,7 @@ class MusicTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDownloaded = playerController.downloadedSongs.contains(song.url);
     final primaryColor = Theme.of(context).colorScheme.onSecondary;
-
+    final isCurrentSong = playerController.currentIndex.value == index;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Card(

@@ -1,9 +1,11 @@
-import 'package:anshed/controllers/PlayerController.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 import 'views/home_page.dart';
+
+// Check for internet connection
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,44 +44,5 @@ class MyApp extends StatelessWidget {
 }
 
 _bulidHome() {
-  var controller = Get.put(PlayerController());
-
   return HomePage();
-
-  if (controller.initialized && controller.songList.isNotEmpty) {
-    // Logger().e(controller.initialized);
-    // return Container(
-    //   color: Colors.green,
-    // );
-  } else {
-    return Scaffold(
-      body: Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 22,),
-
-            // Container(
-            //   width: double.infinity,
-            //   child: IconButton(
-            //     icon: const Icon(Icons.door_back_door_outlined),
-            //     onPressed: ()  {
-            //        controller.fetchMusicUrls();
-            //
-            //     },
-            //     tooltip: 'Refresh Songs',
-            //   ),
-            // ),
-            // GestureDetector(
-            //   child: Center(child: Text("دخول")),
-            //   onTap: () {
-            //     controller.update();
-            //
-            //   },
-            // )
-          ],
-        ),
-      ),
-    );
-  }
 }

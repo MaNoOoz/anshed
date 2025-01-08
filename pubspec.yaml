@@ -32,6 +32,7 @@ dependencies:
     sdk: flutter
   get:
   just_audio:
+  connectivity_plus:
   just_audio_windows:
   just_audio_background:
   flutter_spinkit:
@@ -42,8 +43,9 @@ dependencies:
   flutter_cache_manager:
   audio_service:
   permission_handler:
+  rename:
   logger:
-  share:
+#  share:
   dio:
   path_provider:
   #  flutter_local_notifications:

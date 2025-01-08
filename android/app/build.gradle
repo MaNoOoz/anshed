@@ -3,12 +3,33 @@ plugins {
     id "org.jetbrains.kotlin.android" // Use the fully qualified plugin ID
     id "dev.flutter.flutter-gradle-plugin"
 }
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
-    namespace "com.example.anshed" // Use quotes for string values
-    compileSdk flutter.compileSdkVersion
-
-    ndkVersion flutter.ndkVersion
+    namespace "com.manoooz.anshed" // Use quotes for string values
+    compileSdk 35
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17 // Use Java 17 or later
@@ -20,13 +41,15 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.anshed" // Use quotes for string values
-        minSdk flutter.minSdkVersion
-        targetSdk flutter.targetSdkVersion
-        versionCode flutter.versionCode
-        versionName flutter.versionName
+        applicationId "com.manoooz.anshed" // Use quotes for string values
+        minSdk 24
+        targetSdk 35
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
-
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

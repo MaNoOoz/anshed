@@ -44,30 +44,15 @@ class PlayerController extends GetxController {
 
   Future<void> playSong(int index) async {
     if (index < 0 || index >= songList.length) return;
-
-    currentIndex.value = index; // Update index first
-    currentSongName.value = songList[index].name; // Update song name
-
+    currentIndex.value = index;
+    currentSongName.value = songList[index].name;
     final song = songList[index];
     String filePath = await _downloadAndCacheFile(song.url);
-
-    await player.setFilePath(filePath); // Set the file path for the player
-    await player.play(); // Start playback
-
+    await player.setFilePath(filePath);
+    await player.play();
     currentSong.value = song.url;
     isPlaying.value = true;
     isPaused.value = false;
-  }
-
-  void _initListeners() {
-    player.playbackEventStream.listen((event) {
-      isPlaying.value = player.playing;
-    });
-    player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        nextSong();
-      }
-    });
   }
 
   Future<void> pause() async {
@@ -105,6 +90,16 @@ class PlayerController extends GetxController {
       songList.value = fetchedSongs; // No need to sort locally anymore
     } else {
       Logger().e('Failed to load songs: ${response.error?.message}');
+      Get.snackbar(
+        "Error",
+        "تحقق من إتصالك بالأنترنت",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(8),
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+      );
     }
   }
 
@@ -160,6 +155,17 @@ class PlayerController extends GetxController {
 
   // LifeCycle ================================================
 
+  void _initListeners() {
+    player.playbackEventStream.listen((event) {
+      isPlaying.value = player.playing;
+    });
+    player.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) {
+        nextSong();
+      }
+    });
+  }
+
   @override
   void onInit() async {
     super.onInit();
@@ -176,18 +182,18 @@ class PlayerController extends GetxController {
 
   void showDownloadDialog() {
     Get.defaultDialog(
-      title: 'Download Songs',
-      middleText: 'New songs are available. Would you like to download them?',
+      title: 'تحميل الأغاني',
+      middleText: ' هل تريد تحميل الأغاني لإستخدام التطبيق بدون إنترنت ؟الحجم التقريبي  100 Mb',
       confirm: ElevatedButton(
         onPressed: () {
           downloadAllSongs();
           Get.back();
         },
-        child: const Text('Download All'),
+        child: const Text('  تحميل الجميع '),
       ),
       cancel: ElevatedButton(
         onPressed: Get.back,
-        child: const Text('Cancel'),
+        child: const Text('إلغاء'),
       ),
     );
   }
