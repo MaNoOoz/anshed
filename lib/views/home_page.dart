@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
     final isPlaying = c.isPlaying.value;
     final currentIndex = c.currentIndex.value;
     final currentSongName =
-    currentIndex != -1 ? c.songList[currentIndex].name : 'No song playing';
+        currentIndex != -1 ? c.songList[currentIndex].name : 'No song playing';
 
     return SafeArea(
       child: Scaffold(
@@ -59,7 +59,6 @@ class HomePage extends StatelessWidget {
                 icon: const Icon(Icons.refresh),
                 onPressed: () async {
                   Logger().e("${c.songList.length}");
-
                   c.update();
                   await c.fetchMusicUrls();
                 },
@@ -121,38 +120,48 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget playerWidget({required bool isPlaying,
-    required int currentIndex,
-    required String currentSongName}) {
+  Widget playerWidget(
+      {required bool isPlaying,
+      required int currentIndex,
+      required String currentSongName}) {
     return Obx(() {
       return Container(
-        height: 100,
-        color: Colors.green.withAlpha(22),
+        // height: 200,
+        // color: Colors.green.withAlpha(22),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          backgroundBlendMode: BlendMode.darken,
+          image: DecorationImage(
+              opacity: 0.6,
+              image: AssetImage('assets/s.png'),
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high),
+        ),
         child: Column(
           children: [
             SizedBox(
-              height: 12,
+              height: 50,
             ),
-// Title
+            // Title
+
             Expanded(
-              flex: 1,
+              // color: Colors.red,
+              // height: 100,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Center(
-                  child: Text(
-                    c.currentSongName.value,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-// color: Colors.black,
+                child: Text(
+                  c.currentSongName.value,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      // color: Colors.black,
                       fontSize: 20,
-                    ),
-                  ),
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
 
-// Progress Bar
+            // Progress Bar
             StreamBuilder<Duration>(
               stream: c.player.positionStream,
               builder: (context, snapshot) {
@@ -173,7 +182,7 @@ class HomePage extends StatelessWidget {
             ),
 
             Container(
-              color: Colors.green.shade700,
+              color: Colors.black,
               width: double.infinity,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -189,7 +198,7 @@ class HomePage extends StatelessWidget {
                     tooltip: "Next",
                     icon: const Icon(
                       Icons.navigate_before_rounded,
-                      color: Colors.black,
+                      color: Colors.white,
                       size: 40,
                       // color: Colors.black87
                     ),
@@ -214,14 +223,14 @@ class HomePage extends StatelessWidget {
                           height: 80.0,
                           child: Center(
                               child: CircularProgressIndicator(
-                                color: Colors.black,
-                              )),
+                            color: Colors.white,
+                          )),
                         );
                       } else if (playing != true) {
                         return IconButton(
                           icon: const Icon(
                             Icons.play_arrow_rounded,
-                            color: Colors.black,
+                            color: Colors.white,
                           ),
                           iconSize: 64.0,
                           onPressed: c.player.play,
@@ -229,7 +238,7 @@ class HomePage extends StatelessWidget {
                       } else if (processingState != ProcessingState.completed) {
                         return IconButton(
                           icon: const Icon(Icons.pause_circle_filled_outlined),
-                          color: isPlaying ? Colors.black : Colors.black,
+                          color: isPlaying ? Colors.green : Colors.white,
                           iconSize: 64.0,
                           onPressed: c.player.pause,
                         );
@@ -253,7 +262,7 @@ class HomePage extends StatelessWidget {
                     },
                     icon: const Icon(
                       Icons.stop_circle_rounded,
-                      color: Colors.black,
+                      color: Colors.white,
                       size: 40,
                       // color: Colors.black87
                     ),
@@ -268,7 +277,7 @@ class HomePage extends StatelessWidget {
                     },
                     icon: const Icon(
                       Icons.navigate_next_outlined,
-                      color: Colors.black,
+                      color: Colors.white,
                       size: 40,
                       // color: Colors.black87
                     ),

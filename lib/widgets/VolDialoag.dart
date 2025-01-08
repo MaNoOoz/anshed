@@ -70,7 +70,11 @@ class VolumeControlScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       child: PopupMenuButton(
-        icon: Icon(Icons.volume_up_rounded,size: 40,color: Colors.black,),
+        icon: Icon(
+          Icons.volume_up_rounded,
+          size: 40,
+          color: Colors.white,
+        ),
         itemBuilder: (context) => [
           PopupMenuItem(
             child: VolumeSlider(), // Use the VolumeSlider widget
