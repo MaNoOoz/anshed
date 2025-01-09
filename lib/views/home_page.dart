@@ -1,15 +1,41 @@
 import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:just_audio/just_audio.dart' as just_audio;
+import 'package:logger/logger.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
 import '../widgets/music_tile.dart';
 
-class HomePage extends StatelessWidget {
-  final PlayerController c = Get.put(PlayerController());
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final PlayerController c = Get.find<PlayerController>();
+  final PanelController panelController = PanelController();
+
+  // Widget bg() {
+  //   return BottomSheetScaffold(
+  //     draggableBody: true,
+  //     dismissOnClick: true,
+  //     barrierColor: Colors.black54,
+  //     bottomSheet: DraggableBottomSheet(
+  //       animationDuration: Duration(milliseconds: 200),
+  //       body: BottomSheetBody(),
+  //       header: BottomSheetHeader(), //header is not required
+  //     ),
+  //     appBar: AppBar(
+  //       title: Text(widget.title),
+  //     ),
+  //     body: ScaffoldBody(),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -19,18 +45,17 @@ class HomePage extends StatelessWidget {
         appBar: AppBar(
           centerTitle: true,
           backgroundColor: Colors.transparent,
-          title: Text("أناشيد الثورة السورية"),
+          title: const Text("أناشيد الثورة السورية"),
           actions: [
-            Text("${c.songList.length}"),
+            Obx(() => Text("${c.songList.length}")),
             PopupMenuButton<String>(
               onSelected: (String result) {
                 switch (result) {
                   case 'Refresh':
-                    c.update();
-                    c.fetchMusicUrls();
+                    // c.fetchMusicUrls();
                     break;
                   case 'Download':
-                    c.showDownloadDialog();
+                    // c.showDownloadDialog();
                     break;
                   case 'Share':
                     // final appLink = 'https://example.com'; // todo
@@ -52,69 +77,79 @@ class HomePage extends StatelessWidget {
                   child: Text('مشاركة التطبيق'),
                 ),
               ],
-              icon: Icon(Icons.settings),
+              icon: const Icon(Icons.settings),
             ),
           ],
         ),
         body: Obx(
           () {
-            if (c.songList.isEmpty) {
-              return Center(child: Text('No songs available'));
-            }
-            if (c.initialized) {
-              return Stack(
-                children: [
-                  Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: c.songList.length,
-                          itemBuilder: (context, index) {
-                            return MusicTile(
-                              song: c.songList[index],
-                              index: index,
-                            );
-                          },
-                        ),
-                      ),
-                      // Sliding panel
-                      Obx(() {
-                        return SlidingUpPanel(
-                          controller: PanelController(),
-                          // color: Colors.black26,
-                          color: Colors.transparent,
-                          minHeight: 300,
-                          maxHeight: 300,
-                          panel: playerWidget(
-                              isPlaying: c.isPlaying.value,
-                              currentIndex: c.currentIndex.value,
-                              currentSongName: c.currentSongName.value),
-                          // collapsed: _buildMiniPlayer(context),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(11),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ],
+            var listToShow =
+                c.songList.isNotEmpty ? c.songList : c.downloadedSongs.toList();
+            Logger().e('listToShow ${listToShow.length}');
+            Logger().e('songList ${c.songList.length}');
+            if (listToShow.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('تحديث'),
+                    IconButton(
+                        onPressed: () => c.fetchMusicUrls(),
+                        icon: Icon(Icons.refresh,size: 55,)),
+                  ],
+                ),
               );
             }
-            return Center(child: Text('No songs available'));
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: listToShow.length,
+                    itemBuilder: (context, index) {
+                      return MusicTile(
+                        song: listToShow[index],
+                        index: index,
+                      );
+                    },
+                  ),
+                ),
+                playerWidget()
+              ],
+            );
+
+            // if (c.songList.isNotEmpty) {
+            //   return ListView.builder(
+            //     itemCount: c.songList.length,
+            //     itemBuilder: (context, index) {
+            //       return MusicTile(
+            //         song: c.songList[index],
+            //         index: index,
+            //       );
+            //     },
+            //   );
+            // } else {
+            //   return ListView.builder(
+            //     itemCount: c.downloadedSongs.length,
+            //     itemBuilder: (context, index) {
+            //       return MusicTile(
+            //         song: c.songList[index],
+            //         index: index,
+            //       );
+            //     },
+            //   );
+            // }
           },
         ),
       ),
     );
   }
 
-  Widget playerWidget(
-      {required bool isPlaying,
-      required int currentIndex,
-      required String currentSongName}) {
+  Widget playerWidget() {
     return Obx(() {
       return Container(
-        // height: 200,
-        // color: Colors.green.withAlpha(22),
+        height: 300,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.black,
           backgroundBlendMode: BlendMode.darken,
@@ -126,24 +161,19 @@ class HomePage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            SizedBox(
+            const SizedBox(
               height: 50,
             ),
             // Title
-
             Expanded(
-              // color: Colors.red,
-              // height: 100,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  c.currentSongName.value,
+                  c.currentSong.value?.name ?? '',
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      // color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold),
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -175,37 +205,32 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   VolumeControlScreen(),
-
                   IconButton(
-                    onPressed: () async {
-                      print("${c.player.processingState}");
+                    onPressed: () {
                       c.nextSong();
-                      await c.player.seek(Duration.zero, index: 0);
                     },
                     tooltip: "Next",
                     icon: const Icon(
                       Icons.navigate_before_rounded,
                       color: Colors.white,
                       size: 40,
-                      // color: Colors.black87
                     ),
                   ),
 
                   // play==============================
 
-                  StreamBuilder<PlayerState>(
+                  StreamBuilder<just_audio.PlayerState>(
                     stream: c.player.playerStateStream,
                     builder: (context, snapshot) {
                       final playerState = snapshot.data;
                       final processingState = playerState?.processingState;
                       final playing = playerState?.playing;
-                      final loading = ProcessingState.loading;
-                      final buffering = ProcessingState.buffering;
 
-                      if (processingState == loading ||
-                          processingState == buffering) {
-                        return SizedBox(
-                          // color: Colors.red,
+                      if (processingState ==
+                              just_audio.ProcessingState.loading ||
+                          processingState ==
+                              just_audio.ProcessingState.buffering) {
+                        return const SizedBox(
                           width: 80.0,
                           height: 80.0,
                           child: Center(
@@ -222,10 +247,11 @@ class HomePage extends StatelessWidget {
                           iconSize: 64.0,
                           onPressed: c.player.play,
                         );
-                      } else if (processingState != ProcessingState.completed) {
+                      } else if (processingState !=
+                          just_audio.ProcessingState.completed) {
                         return IconButton(
                           icon: const Icon(Icons.pause_circle_filled_outlined),
-                          color: isPlaying ? Colors.green : Colors.white,
+                          color: Colors.white,
                           iconSize: 64.0,
                           onPressed: c.player.pause,
                         );
@@ -242,31 +268,23 @@ class HomePage extends StatelessWidget {
                   /// ========================= stop
                   IconButton(
                     onPressed: () async {
-                      print("${c.player.processingState}");
-
                       await c.player.stop();
-                      await c.player.seek(Duration.zero, index: 0);
                     },
                     icon: const Icon(
                       Icons.stop_circle_rounded,
                       color: Colors.white,
                       size: 40,
-                      // color: Colors.black87
                     ),
                   ),
 
                   IconButton(
-                    onPressed: () async {
-                      print("${c.player.processingState}");
-
+                    onPressed: () {
                       c.previousSong();
-                      await c.player.seek(Duration.zero, index: 0);
                     },
                     icon: const Icon(
                       Icons.navigate_next_outlined,
                       color: Colors.white,
                       size: 40,
-                      // color: Colors.black87
                     ),
                   ),
                 ],

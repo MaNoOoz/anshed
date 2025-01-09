@@ -4,39 +4,46 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'dart:convert'; // Import JSON encoding and decoding
 
 import '../models/song.dart';
+
+enum PlayerState {
+  loading,
+  playing,
+  paused,
+  stopped,
+  error,
+}
 
 class PlayerController extends GetxController {
   final AudioPlayer player = AudioPlayer();
   final DefaultCacheManager cacheManager = DefaultCacheManager();
+  final String jsonCacheKey = 'cachedSongs'; // Key to store the JSON data
 
-  var isLoading = false.obs; // Loading indicator
-  var currentSong = ''.obs;
-  var currentSongName = ''.obs;
-  var isPlaying = false.obs;
-  var isPaused = false.obs;
+  var currentSong = Rxn<Song>();
   var songList = <Song>[].obs;
-  var downloadedSongs = <String>{}.obs;
+  var downloadedSongs = <Song>[].obs;
   var currentIndex = 0.obs;
-
   var volume = 1.0.obs;
 
-  // Player ================================================
-
-  Future<void> _initializePlayer() async {
-    await fetchMusicUrls();
-    await _checkNewAndDownloadedSongs();
+  @override
+  void onInit() {
+    super.onInit();
+    loadCachedSongs();
+    fetchMusicUrls();
     _initListeners();
-
-    currentSongName = currentSongName;
-    currentIndex.value != -1
-        ? songList[currentIndex.value].name
-        : 'No song playing';
-    isPlaying = isPlaying;
     player.setVolume(volume.value);
     ever(volume, (value) => player.setVolume(value));
   }
+
+  @override
+  void onClose() {
+    player.dispose();
+    super.onClose();
+  }
+
+  // Player ================================================
 
   void setVolume(double newVolume) {
     volume.value = newVolume;
@@ -44,110 +51,106 @@ class PlayerController extends GetxController {
 
   Future<void> playSong(int index) async {
     if (index < 0 || index >= songList.length) return;
-    currentIndex.value = index;
-    currentSongName.value = songList[index].name;
-    final song = songList[index];
-    String filePath = await _downloadAndCacheFile(song.url);
-    await player.setFilePath(filePath);
-    await player.play();
-    currentSong.value = song.url;
-    isPlaying.value = true;
-    isPaused.value = false;
+    try {
+      currentIndex.value = index;
+      currentSong.value = songList[index];
+      final song = songList[index];
+      String filePath = await _downloadAndCacheFile(song.url);
+      await player.setFilePath(filePath);
+      await player.play();
+    } catch (e) {
+      Logger().e('Error playing song: $e');
+    }
   }
 
   Future<void> pause() async {
-    await player.pause();
-    isPlaying.value = false;
-    isPaused.value = true;
+    try {
+      await player.pause();
+    } catch (e) {
+      Logger().e('Error pausing song: $e');
+    }
   }
 
-  void nextSong() {
+  Future<void> nextSong() async {
+    if (songList.isEmpty) return;
     currentIndex.value = (currentIndex.value + 1) % songList.length;
-    playSong(currentIndex.value);
+    await playSong(currentIndex.value);
   }
 
-  void previousSong() {
+  Future<void> previousSong() async {
+    if (songList.isEmpty) return;
     currentIndex.value =
         (currentIndex.value - 1 + songList.length) % songList.length;
-    playSong(currentIndex.value);
+    await playSong(currentIndex.value);
   }
 
   // Api ================================================
 
   Future<void> fetchMusicUrls() async {
-    final query = QueryBuilder<ParseObject>(ParseObject('Song'))
-      ..orderByAscending('updatedAt'); // Sort by updatedAt in descending order
+    try {
+      final query = QueryBuilder<ParseObject>(ParseObject('Song'))
+        ..orderByDescending('updatedAt');
 
-    final response = await query.query();
+      final response = await query.query();
 
-    if (response.success && response.results != null) {
-      Logger().e('response.success${response.success}');
+      if (response.success && response.results != null) {
+        final fetchedSongs = response.results!
+            .map((result) => Song.fromParseObject(result as ParseObject))
+            .toList();
 
-      final fetchedSongs = response.results!
-          .map((result) => Song.fromParseObject(result as ParseObject))
-          .toList();
+        songList.value = fetchedSongs;
 
-      songList.value = fetchedSongs; // No need to sort locally anymore
-    } else {
-      Logger().e('Failed to load songs: ${response.error?.message}');
-      Get.snackbar(
-        "Error",
-        "تحقق من إتصالك بالأنترنت",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(8),
-        duration: const Duration(seconds: 2),
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-      );
+        // Cache the JSON data
+        await cacheManager.putFile(
+          jsonCacheKey,
+          utf8.encode(jsonEncode(fetchedSongs.map((song) => song.toJson()).toList())),
+          key: jsonCacheKey,
+        );
+      } else {
+        _showErrorSnackbar("تحقق من إتصالك بالأنترنت");
+        Logger().e('Failed to load songs: ${response.error?.message}');
+      }
+    } catch (e) {
+      _showErrorSnackbar("حدث خطأ أثناء جلب الأغاني");
+      Logger().e('Error fetching music URLs: $e');
     }
   }
 
-  Future<void> _checkNewAndDownloadedSongs() async {
-    final cachedUrls = <String>{};
-    for (var song in songList) {
-      var file = await cacheManager.getFileFromCache(song.url);
+  // Cache ================================================
+
+  Future<void> loadCachedSongs() async {
+    try {
+      var file = await cacheManager.getFileFromCache(jsonCacheKey);
       if (file != null) {
-        cachedUrls.add(song.url);
-        downloadedSongs.add(song.url);
+        final jsonString = await file.file.readAsString();
+        final List<dynamic> jsonData = jsonDecode(jsonString);
+        final List<Song> cachedSongs = jsonData.map((e) => Song.fromJson(e)).toList();
+        downloadedSongs.addAll(cachedSongs);
       }
+    } catch (e) {
+      Logger().e('Error loading cached songs: $e');
     }
-    final serverUrls = songList.map((song) => song.url).toSet();
-    if (!cachedUrls.containsAll(serverUrls)) {
-      showDownloadDialog();
-    }
-  }
-
-  Future<void> downloadAllSongs() async {
-    for (var song in songList) {
-      if (!downloadedSongs.contains(song.url)) {
-        await _downloadAndCacheFile(song.url);
-      }
-    }
-    Logger().d('All songs downloaded');
   }
 
   Future<void> downloadSong(int index) async {
     if (index < 0 || index >= songList.length) return;
-    final song = songList[index];
-    await _downloadAndCacheFile(song.url);
-    Get.snackbar(
-      'Download Complete',
-      '${song.name} is now available offline.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-    );
+    try {
+      final song = songList[index];
+      await _downloadAndCacheFile(song.url);
+      showSuccessSnackbar('${song.name} is now available offline.');
+    } catch (e) {
+      _showErrorSnackbar("حدث خطأ أثناء تحميل الأغنية");
+      Logger().e('Error downloading song: $e');
+    }
   }
 
   Future<String> _downloadAndCacheFile(String url) async {
     try {
       var file = await cacheManager.getSingleFile(url);
-      downloadedSongs.add(url);
+      downloadedSongs.add(Song(name: "Offline Song", url: url, updatedAt: DateTime.now()));
       return file.path;
     } catch (e) {
+      _showErrorSnackbar("حدث خطأ أثناء تحميل الملف");
       Logger().e('Error downloading file: $e');
       return '';
     }
@@ -156,45 +159,38 @@ class PlayerController extends GetxController {
   // LifeCycle ================================================
 
   void _initListeners() {
-    player.playbackEventStream.listen((event) {
-      isPlaying.value = player.playing;
-    });
-    player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
+    player.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
         nextSong();
       }
     });
   }
 
-  @override
-  void onInit() async {
-    super.onInit();
-    await _initializePlayer();
+  // SnackBar ================================================
+
+  void _showErrorSnackbar(String message) {
+    Get.snackbar(
+      "Error",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(8),
+      duration: const Duration(seconds: 2),
+      icon: const Icon(Icons.error, color: Colors.white),
+    );
   }
 
-  @override
-  void onClose() async {
-    await player.dispose();
-    super.onClose();
-  }
-
-  // Dialogs ================================================
-
-  void showDownloadDialog() {
-    Get.defaultDialog(
-      title: 'تحميل الأغاني',
-      middleText: ' هل تريد تحميل الأغاني لإستخدام التطبيق بدون إنترنت ؟الحجم التقريبي  100 Mb',
-      confirm: ElevatedButton(
-        onPressed: () {
-          downloadAllSongs();
-          Get.back();
-        },
-        child: const Text('  تحميل الجميع '),
-      ),
-      cancel: ElevatedButton(
-        onPressed: Get.back,
-        child: const Text('إلغاء'),
-      ),
+  void showSuccessSnackbar(String message) {
+    Get.snackbar(
+      "Success",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(8),
+      duration: const Duration(seconds: 2),
+      icon: const Icon(Icons.check_circle, color: Colors.white),
     );
   }
 }

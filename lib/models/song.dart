@@ -32,10 +32,26 @@ class Song {
 
     return Song(
       url: songUrl,
-      name: obj.get<String>('Name') ?? '', // Use 'Name' to match the JSON
+      name: obj.get<String>('Name') ?? '',
+      // Use 'Name' to match the JSON
       artist: obj.get<String>('artist'),
       createdAt: obj.get<DateTime>('createdAt'),
       updatedAt: obj.get<DateTime>('updatedAt'),
     );
   }
+
+  factory Song.fromJson(Map<String, dynamic> json) {
+    return Song(
+      name: json['name'],
+      url: json['url'],
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
+Map<String, dynamic> toJson() {
+  return {
+    'name': name,
+    'url': url,
+    'updatedAt': updatedAt?.toIso8601String(),
+  };
+}
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
+import 'controllers/PlayerController.dart';
 import 'views/home_page.dart';
 
 // Check for internet connection
@@ -15,6 +16,7 @@ void main() async {
   const parseServerUrl = 'https://parseapi.back4app.com';
 
   await Parse().initialize(appId, parseServerUrl, clientKey: clientKey);
+  Get.put(PlayerController()); // Or Get.lazyPut(() => PlayerController());
 
   runApp(MyApp());
 }
