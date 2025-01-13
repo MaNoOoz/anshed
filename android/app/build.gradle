@@ -1,24 +1,8 @@
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android" // Use the fully qualified plugin ID
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
-}
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
 }
 
 def keystoreProperties = new Properties()
@@ -28,47 +12,47 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.manoooz.anshed" // Use quotes for string values
-    compileSdk 35
+    namespace = "com.manoooz.anshed"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17 // Use Java 17 or later
-        targetCompatibility JavaVersion.VERSION_17 // Use Java 17 or later
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = "17" // Use "17" as a string
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    signingConfigs {
+        release {
+            println "Key Alias: ${keystoreProperties['keyAlias']}"  // Debug log
+            keyAlias = keystoreProperties['keyAlias']
+            keyPassword = keystoreProperties['keyPassword']
+            storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword = keystoreProperties['storePassword']
+        }
     }
 
     defaultConfig {
-        applicationId "com.manoooz.anshed" // Use quotes for string values
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.manoooz.anshed"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk 24
         targetSdk 35
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            // signingConfig signingConfigs.release // Use release instead of debug
-            minifyEnabled true // Enable code shrinking for release builds
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            signingConfig signingConfigs.debug
-        }
-    }
-    signingConfigs {
-        release {
-            // You need to create a keystore file and add the path here
-            storeFile file("your_keystore_path/your_keystore_name.jks")
-            storePassword "your_keystore_password"
-            keyAlias "your_key_alias"
-            keyPassword "your_key_password"
+//                signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
         }
     }
 }

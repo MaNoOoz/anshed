@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart' as just_audio;
 import 'package:logger/logger.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../controllers/PlayerController.dart';
@@ -19,6 +20,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PlayerController c = Get.find<PlayerController>();
   final PanelController panelController = PanelController();
+  static String BASE_URL_flutter =
+      "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
 
   // Widget bg() {
   //   return BottomSheetScaffold(
@@ -58,8 +61,7 @@ class _HomePageState extends State<HomePage> {
                     // c.showDownloadDialog();
                     break;
                   case 'Share':
-                    // final appLink = 'https://example.com'; // todo
-                    // Share.share('Check out this app: $appLink');
+                    Share.share('Check out this app: $BASE_URL_flutter');
                     break;
                 }
               },
@@ -95,7 +97,10 @@ class _HomePageState extends State<HomePage> {
                     Text('تحديث'),
                     IconButton(
                         onPressed: () => c.fetchMusicUrls(),
-                        icon: Icon(Icons.refresh,size: 55,)),
+                        icon: Icon(
+                          Icons.refresh,
+                          size: 55,
+                        )),
                   ],
                 ),
               );

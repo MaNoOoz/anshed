@@ -45,7 +45,7 @@ dependencies:
   permission_handler:
   rename:
   logger:
-#  share:
+  share_plus:
   dio:
   path_provider:
   #  flutter_local_notifications:
