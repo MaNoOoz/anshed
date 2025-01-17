@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
               onSelected: (String result) {
                 switch (result) {
                   case 'Refresh':
-                    c.fetchSongs();
+                    c.fetchMusicUrls();
                     break;
                   case 'Download':
                     c.downloadAllSongs();
@@ -66,20 +66,20 @@ class _HomePageState extends State<HomePage> {
         ),
         body: Obx(
           () {
-            if (c.isLoading && c.songs.isEmpty) {
+            if (c.loading && c.songs.isEmpty) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
             }
 
-            if (c.songs.isEmpty) {
+            if (c.songs.isEmpty && c.downloaded.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text('تحديث'),
                     IconButton(
-                      onPressed: () => c.fetchSongs(),
+                      onPressed: () => c.fetchMusicUrls(),
                       icon: const Icon(
                         Icons.refresh,
                         size: 55,
@@ -115,8 +115,6 @@ class _HomePageState extends State<HomePage> {
 
   Widget playerWidget() {
     return Obx(() {
-      final currentSong = c.currentSong;
-
       return Container(
         height: 300,
         width: double.infinity,
@@ -125,10 +123,7 @@ class _HomePageState extends State<HomePage> {
           backgroundBlendMode: BlendMode.darken,
           image: DecorationImage(
             opacity: 0.6,
-            image: currentSong?.artworkUrl != null &&
-                    currentSong!.artworkUrl!.isNotEmpty
-                ? NetworkImage(currentSong.artworkUrl!)
-                : const AssetImage('assets/s.png') as ImageProvider,
+            image: const AssetImage('assets/s.png'),
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
@@ -141,7 +136,7 @@ class _HomePageState extends State<HomePage> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  currentSong?.name ?? '',
+                  c.current?.name ?? '',
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -152,7 +147,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Progress Bar
             StreamBuilder<Duration>(
               stream: c.player.positionStream,
               builder: (context, snapshot) {
@@ -164,8 +158,8 @@ class _HomePageState extends State<HomePage> {
                   duration: duration,
                   position: position,
                   bufferedPosition: bufferedPosition,
-                  onChanged: (newPosition) {
-                    c.player.seek(newPosition);
+                  onChanged: (duration) {
+                    c.player.seek(duration);
                   },
                 );
               },
@@ -193,7 +187,13 @@ class _HomePageState extends State<HomePage> {
                         size: 44,
                         color: Colors.white,
                       ),
-                      onPressed: () => c.togglePlayPause(),
+                      onPressed: () {
+                        if (isPlaying) {
+                          c.player.pause();
+                        } else {
+                          c.player.play();
+                        }
+                      },
                     );
                   },
                 ),

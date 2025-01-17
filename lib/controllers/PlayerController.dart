@@ -18,22 +18,20 @@ class PlayerController extends GetxController {
   final String prefsKey = 'downloadedSongs';
 
   // Observables
-  final _songs = <Song>[].obs;
-  final _downloadedSongs = <String>{}.obs;
-  final _currentSong = Rxn<Song>();
-  final _currentIndex = 0.obs;
-  final _volume = 1.0.obs;
-  final _isLoading = false.obs;
-  final _isDownloading = false.obs;
+  var currentSong = Rxn<Song>();
+  var songList = <Song>[].obs;
+  var downloadedSongs = <Song>[].obs;
+  var currentIndex = 0.obs;
+  var volume = 1.0.obs;
+  var isLoading = false.obs;
 
   // Getters
-  List<Song> get songs => _songs;
-  Set<String> get downloadedSongs => _downloadedSongs;
-  Song? get currentSong => _currentSong.value;
-  int get currentIndex => _currentIndex.value;
-  double get volume => _volume.value;
-  bool get isLoading => _isLoading.value;
-  bool get isDownloading => _isDownloading.value;
+  List<Song> get songs => songList;
+  List<Song> get downloaded => downloadedSongs;
+  Song? get current => currentSong.value;
+  int get index => currentIndex.value;
+  double get vol => volume.value;
+  bool get loading => isLoading.value;
 
   // Cache management
   final Map<String, String> _cachedPaths = {};
@@ -42,11 +40,14 @@ class PlayerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadDownloadedSongs();
-    _initPlayer();
-    fetchSongs();
+    loadCachedSongs();
+    fetchMusicUrls();
+    _initListeners();
+    player.setVolume(volume.value);
+    ever(volume, (value) => player.setVolume(value));
+  }
 
-    // Handle song completion
+  void _initListeners() {
     player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         nextSong();
@@ -54,20 +55,69 @@ class PlayerController extends GetxController {
     });
   }
 
-  void _initPlayer() {
-    player.setVolume(_volume.value);
-    ever(_volume, (value) => player.setVolume(value));
+  Future<void> loadCachedSongs() async {
+    try {
+      var file = await cacheManager.getFileFromCache(jsonCacheKey);
+      if (file != null) {
+        final jsonString = await file.file.readAsString();
+        final List<dynamic> jsonData = jsonDecode(jsonString);
+        final List<Song> cachedSongs =
+            jsonData.map((e) => Song.fromJson(e)).toList();
+        songList.value = cachedSongs; // Use cached songs if available
+        downloadedSongs.value = cachedSongs;
+      }
+    } catch (e) {
+      Logger().e('Error loading cached songs: $e');
+    }
+  }
+
+  Future<void> fetchMusicUrls() async {
+    try {
+      isLoading.value = true;
+      final query = QueryBuilder<ParseObject>(ParseObject('Song'))
+        ..orderByDescending('updatedAt');
+
+      final response = await query.query();
+
+      if (response.success && response.results != null) {
+        final fetchedSongs = response.results!
+            .map((result) => Song.fromParseObject(result as ParseObject))
+            .toList();
+
+        songList.value = fetchedSongs;
+
+        // Cache the JSON data
+        await cacheManager.putFile(
+          jsonCacheKey,
+          utf8.encode(
+              jsonEncode(fetchedSongs.map((song) => song.toJson()).toList())),
+          key: jsonCacheKey,
+        );
+      } else {
+        if (songList.isEmpty) {
+          _showErrorSnackbar("تحقق من إتصالك بالأنترنت");
+        }
+        Logger().e('Failed to load songs: ${response.error?.message}');
+      }
+    } catch (e) {
+      if (songList.isEmpty) {
+        _showErrorSnackbar("حدث خطأ أثناء جلب الأغاني");
+      }
+      Logger().e('Error fetching music URLs: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> playSong(int index) async {
-    if (index < 0 || index >= _songs.length || _isLoading.value) return;
+    if (index < 0 || index >= songList.length || isLoading.value) return;
 
     try {
-      _isLoading.value = true;
-      _currentIndex.value = index;
-      _currentSong.value = _songs[index];
+      isLoading.value = true;
+      currentIndex.value = index;
+      currentSong.value = songList[index];
 
-      final song = _songs[index];
+      final song = songList[index];
 
       // Start loading audio source immediately
       final audioPathFuture = _getAudioPath(song.url);
@@ -90,7 +140,7 @@ class PlayerController extends GetxController {
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
             'index': index,
-            'total': _songs.length,
+            'total': songList.length,
           },
         );
 
@@ -115,7 +165,7 @@ class PlayerController extends GetxController {
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
             'index': index,
-            'total': _songs.length,
+            'total': songList.length,
           },
         );
 
@@ -133,7 +183,7 @@ class PlayerController extends GetxController {
       Logger().e('Error playing song: $e');
       _showErrorSnackbar("حدث خطأ أثناء تشغيل الأغنية");
     } finally {
-      _isLoading.value = false;
+      isLoading.value = false;
     }
   }
 
@@ -150,61 +200,53 @@ class PlayerController extends GetxController {
   }
 
   Future<void> nextSong() async {
-    if (_currentIndex.value < _songs.length - 1) {
-      await playSong(_currentIndex.value + 1);
+    if (currentIndex.value < songList.length - 1) {
+      await playSong(currentIndex.value + 1);
     }
   }
 
   Future<void> previousSong() async {
-    if (_currentIndex.value > 0) {
-      await playSong(_currentIndex.value - 1);
+    if (currentIndex.value > 0) {
+      await playSong(currentIndex.value - 1);
     }
   }
 
   void setVolume(double newVolume) {
-    _volume.value = newVolume;
+    volume.value = newVolume;
     player.setVolume(newVolume);
   }
 
   // Download Management ======================================
 
   Future<void> downloadSong(int index) async {
-    if (index < 0 || index >= _songs.length) return;
-
+    if (index < 0 || index >= songList.length) return;
     try {
-      final song = _songs[index];
-      if (_downloadedSongs.contains(song.url)) {
-        showSuccessSnackbar("${song.name} متوفر بالفعل للتشغيل دون إنترنت");
+      final song = songList[index];
+      if (downloadedSongs.any((s) => s.url == song.url)) {
+        showSuccessSnackbar('${song.name} متوفر بالفعل للتشغيل دون إنترنت');
         return;
       }
 
-      _isDownloading.value = true;
-      final path = await _downloadAndCacheFile(song.url);
-
-      if (path.isNotEmpty) {
-        _downloadedSongs.add(song.url);
-        await _saveDownloadedSongs();
-        showSuccessSnackbar("تم تحميل ${song.name} بنجاح");
-      }
+      await _downloadAndCacheFile(song.url);
+      downloadedSongs.add(song);
+      showSuccessSnackbar('تم تحميل ${song.name} للتشغيل دون إنترنت');
     } catch (e) {
-      _showErrorSnackbar("فشل تحميل الأغنية");
+      _showErrorSnackbar("حدث خطأ أثناء تحميل الأغنية");
       Logger().e('Error downloading song: $e');
-    } finally {
-      _isDownloading.value = false;
     }
   }
 
   Future<void> downloadAllSongs() async {
     try {
-      _isDownloading.value = true;
-      for (var i = 0; i < _songs.length; i++) {
-        if (!_downloadedSongs.contains(_songs[i].url)) {
+      for (var i = 0; i < songList.length; i++) {
+        if (!downloadedSongs.any((s) => s.url == songList[i].url)) {
           await downloadSong(i);
         }
       }
       showSuccessSnackbar("تم تحميل جميع الأغاني بنجاح");
-    } finally {
-      _isDownloading.value = false;
+    } catch (e) {
+      _showErrorSnackbar("حدث خطأ أثناء تحميل الأغاني");
+      Logger().e('Error downloading all songs: $e');
     }
   }
 
@@ -236,10 +278,10 @@ class PlayerController extends GetxController {
   }
 
   Future<void> _preloadNextSong(int currentIndex) async {
-    if (currentIndex >= _songs.length - 1) return;
+    if (currentIndex >= songList.length - 1) return;
 
     try {
-      final nextSong = _songs[currentIndex + 1];
+      final nextSong = songList[currentIndex + 1];
       if (!_preloadQueue.contains(nextSong.url)) {
         _preloadQueue.add(nextSong.url);
         await _getAudioPath(nextSong.url);
@@ -252,33 +294,12 @@ class PlayerController extends GetxController {
 
   Future<String> _downloadAndCacheFile(String url) async {
     try {
-      final file = await cacheManager.getSingleFile(url);
-      _cachedPaths[url] = file.path;
+      var file = await cacheManager.getSingleFile(url);
       return file.path;
     } catch (e) {
+      _showErrorSnackbar("حدث خطأ أثناء تحميل الملف");
       Logger().e('Error downloading file: $e');
-      return '';
-    }
-  }
-
-  // Persistence ============================================
-
-  Future<void> _loadDownloadedSongs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final downloadedUrls = prefs.getStringList(prefsKey) ?? [];
-      _downloadedSongs.addAll(downloadedUrls);
-    } catch (e) {
-      Logger().e('Error loading downloaded songs: $e');
-    }
-  }
-
-  Future<void> _saveDownloadedSongs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(prefsKey, _downloadedSongs.toList());
-    } catch (e) {
-      Logger().e('Error saving downloaded songs: $e');
+      rethrow;
     }
   }
 
@@ -308,37 +329,5 @@ class PlayerController extends GetxController {
       duration: const Duration(seconds: 2),
       icon: const Icon(Icons.check_circle, color: Colors.white),
     );
-  }
-
-  Future<void> fetchSongs() async {
-    try {
-      _isLoading.value = true;
-
-      final query = QueryBuilder<ParseObject>(ParseObject('Song'))
-        ..orderByDescending('updatedAt');
-
-      final response = await query.query();
-
-      if (response.success && response.results != null) {
-        final fetchedSongs = response.results!
-            .map((result) => Song.fromParseObject(result as ParseObject))
-            .toList();
-
-        _songs.value = fetchedSongs;
-
-        // Pre-cache first few songs
-        for (var i = 0; i < min(3, fetchedSongs.length); i++) {
-          _preCacheSong(fetchedSongs[i].url);
-        }
-      } else {
-        _showErrorSnackbar("تحقق من إتصالك بالأنترنت");
-        Logger().e('Failed to load songs: ${response.error?.message}');
-      }
-    } catch (e) {
-      _showErrorSnackbar("حدث خطأ أثناء جلب الأغاني");
-      Logger().e('Error fetching songs: $e');
-    } finally {
-      _isLoading.value = false;
-    }
   }
 }

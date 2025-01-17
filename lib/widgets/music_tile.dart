@@ -19,7 +19,7 @@ class MusicTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isCurrentSong = c.currentSong?.url == song.url;
+      final isCurrentSong = c.currentSong.value?.url == song.url;
       final isPlaying = isCurrentSong && c.player.playing;
       final isDownloaded = c.downloadedSongs.contains(song.url);
 

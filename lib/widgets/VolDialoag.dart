@@ -16,7 +16,7 @@ class VolumeSlider extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Obx(() => Slider(
-                value: controller.volume,
+                value: controller.volume.value,
                 onChanged: controller.setVolume,
                 min: 0,
                 max: 1,
