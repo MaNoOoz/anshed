@@ -4,6 +4,7 @@ class Song {
   String url;
   String name;
   String? artist;
+  String? artworkUrl; // Optional artwork URL
   DateTime? createdAt;
   DateTime? updatedAt;
 
@@ -11,6 +12,7 @@ class Song {
     required this.url,
     required this.name,
     this.artist,
+    this.artworkUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -35,6 +37,7 @@ class Song {
       name: obj.get<String>('Name') ?? '',
       // Use 'Name' to match the JSON
       artist: obj.get<String>('artist'),
+      artworkUrl: obj.get<String>('artworkUrl'), // Get artwork URL if exists
       createdAt: obj.get<DateTime>('createdAt'),
       updatedAt: obj.get<DateTime>('updatedAt'),
     );
@@ -47,11 +50,13 @@ class Song {
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
-Map<String, dynamic> toJson() {
-  return {
-    'name': name,
-    'url': url,
-    'updatedAt': updatedAt?.toIso8601String(),
-  };
-}
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'url': url,
+      'artworkUrl': artworkUrl, // Add artwork URL to JSON
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
 }

@@ -8,62 +8,73 @@ class MusicTile extends StatelessWidget {
   final Song song;
   final int index;
 
-  const MusicTile({Key? key, required this.song, required this.index})
-      : super(key: key);
+  MusicTile({
+    Key? key,
+    required this.song,
+    required this.index,
+  }) : super(key: key);
+
+  final PlayerController c = Get.find<PlayerController>();
 
   @override
   Widget build(BuildContext context) {
-    final PlayerController playerController = Get.find<PlayerController>();
-    final primaryColor = Theme.of(context).colorScheme.onSecondary;
-
     return Obx(() {
-      final isDownloaded = playerController.downloadedSongs.contains(song.url);
-      final isCurrentSong = playerController.currentIndex.value == index;
+      final isCurrentSong = c.currentSong?.url == song.url;
+      final isPlaying = isCurrentSong && c.player.playing;
+      final isDownloaded = c.downloadedSongs.contains(song.url);
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Card(
-          color: isCurrentSong
-              ? Colors.green.shade700
-              : Colors.green.shade400.withAlpha(50),
-          elevation: isDownloaded ? 6 : 3,
-          child: ListTile(
-            leading: const Icon(
-              Icons.music_note,
-              color: Colors.white,
-              size: 40,
+      return ListTile(
+        leading: Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            image: DecorationImage(
+              image: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
+                  ? NetworkImage(song.artworkUrl!)
+                  : const AssetImage('assets/s.png') as ImageProvider,
+              fit: BoxFit.contain,
             ),
-            title: Text(
-              song.name,
-              style: TextStyle(
-                fontWeight: isDownloaded ? FontWeight.bold : FontWeight.normal,
-                color: Colors.white,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // trailing: IconButton(
-            //   icon: Icon(
-            //     isDownloaded ? Icons.check : Icons.download,
-            //     color: isDownloaded ? Colors.white : primaryColor,
-            //   ),
-            //   tooltip: isDownloaded ? "Available offline" : "Download song",
-            //   // onPressed: () async {
-            //   //   if (!isDownloaded) {
-            //   //     await playerController.downloadSong(index);
-            //   //     playerController
-            //   //         .showSuccessSnackbar("${song.name} has been downloaded");
-            //   //   } else {
-            //   //     playerController
-            //   //         .showSuccessSnackbar("${song.name} is available offline");
-            //   //   }
-            //   // },
-            // ),
-            onTap: () {
-              playerController.playSong(index);
-              // showCustomBottomSheet(context,PlayerWidget());
-            },
           ),
         ),
+        title: Text(
+          song.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDownloaded)
+              const Icon(
+                Icons.download_done,
+                color: Colors.green,
+              ),
+            IconButton(
+              icon: Icon(
+                isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (isCurrentSong) {
+                  c.togglePlayPause();
+                } else {
+                  c.playSong(index);
+                }
+              },
+            ),
+          ],
+        ),
+        onTap: () {
+          if (isCurrentSong) {
+            c.togglePlayPause();
+          } else {
+            c.playSong(index);
+          }
+        },
       );
     });
   }

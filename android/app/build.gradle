@@ -26,6 +26,7 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8
     }
 
+
     signingConfigs {
         release {
             println "Key Alias: ${keystoreProperties['keyAlias']}"  // Debug log

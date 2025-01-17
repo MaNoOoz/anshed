@@ -4,25 +4,25 @@ import 'package:get/get.dart';
 import '../controllers/PlayerController.dart';
 
 class VolumeSlider extends StatelessWidget {
+  const VolumeSlider({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final PlayerController controller = Get.find();
 
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Obx(() => Slider(
-                value: controller.volume.value,
-                onChanged: (newVolume) {
-                  controller.setVolume(newVolume);
-                },
+                value: controller.volume,
+                onChanged: controller.setVolume,
                 min: 0,
                 max: 1,
               )),
           Obx(() => Text(
-              'Volume: ${(controller.volume.value * 100).toStringAsFixed(0)}%')),
+              'مستوى الصوت: ${(controller.volume * 100).toStringAsFixed(0)}%')),
         ],
       ),
     );
@@ -30,34 +30,18 @@ class VolumeSlider extends StatelessWidget {
 }
 
 void showVolumeDialog(BuildContext context) {
-  final PlayerController controller = Get.find();
-
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text('Adjust Volume'),
-        content: Obx(() => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Slider(
-                  value: controller.volume.value,
-                  onChanged: (newVolume) {
-                    controller.setVolume(newVolume);
-                  },
-                  min: 0,
-                  max: 1,
-                ),
-                Text(
-                    'Volume: ${(controller.volume.value * 100).toStringAsFixed(0)}%'),
-              ],
-            )),
+        title: const Text('ضبط مستوى الصوت'),
+        content: const VolumeSlider(),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text('Close'),
+            child: const Text('إغلاق'),
           ),
         ],
       );
@@ -66,22 +50,22 @@ void showVolumeDialog(BuildContext context) {
 }
 
 class VolumeControlScreen extends StatelessWidget {
+  const VolumeControlScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: PopupMenuButton(
-        icon: Icon(
-          Icons.volume_up_rounded,
-          size: 40,
-          color: Colors.white,
-        ),
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            child: VolumeSlider(), // Use the VolumeSlider widget
-            enabled: false, // Disable the item to prevent selection
-          ),
-        ],
+    return PopupMenuButton(
+      icon: const Icon(
+        Icons.volume_up_rounded,
+        size: 40,
+        color: Colors.white,
       ),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          child: const VolumeSlider(),
+          enabled: false,
+        ),
+      ],
     );
   }
 }

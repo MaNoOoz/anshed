@@ -33,14 +33,14 @@ dependencies:
   get:
   just_audio:
   connectivity_plus:
-  just_audio_windows:
-  just_audio_background:
+  just_audio_web:
   flutter_spinkit:
   sliding_up_panel:
   parse_server_sdk_flutter: ^9.0.0
   solid_bottom_sheet:
   audio_session:
-  flutter_cache_manager:
+  shared_preferences:
+  just_audio_background:
   audio_service:
   permission_handler:
   rename:

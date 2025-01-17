@@ -175,7 +175,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_cache_manager:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_cache_manager
       sha256: "8207f27539deb83732fdda03e259349046a39a4c767269285f449ade355d54ba"
@@ -252,10 +252,10 @@ packages:
     dependency: "direct main"
     description:
       name: just_audio
-      sha256: a49e7120b95600bd357f37a2bb04cd1e88252f7cdea8f3368803779b925b1049
+      sha256: "1a1eb86e7d81e69a1d36943f2b3efd62dece3dad2cafd9ec2e62e6db7c04d9b7"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.42"
+    version: "0.9.43"
   just_audio_background:
     dependency: "direct main"
     description:
@@ -273,21 +273,13 @@ packages:
     source: hosted
     version: "4.3.0"
   just_audio_web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: just_audio_web
       sha256: "0edb481ad4aa1ff38f8c40f1a3576013c3420bf6669b686fe661627d49bc606c"
       url: "https://pub.dev"
     source: hosted
     version: "0.4.11"
-  just_audio_windows:
-    dependency: "direct main"
-    description:
-      name: just_audio_windows
-      sha256: b1ba5305d841c0e3883644e20fc11aaa23f28cfdd43ec20236d1e119a402ef29
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.2"
   leak_tracker:
     dependency: transitive
     description:
@@ -577,7 +569,7 @@ packages:
     source: hosted
     version: "3.4.0"
   shared_preferences:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: d3bbe5553a986e83980916ded2f0b435ef2e1893dfaa29d5a7a790d0eca12180
