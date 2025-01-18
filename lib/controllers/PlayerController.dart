@@ -1,4 +1,5 @@
-import 'dart:math';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
@@ -6,8 +7,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:logger/logger.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 import '../models/song.dart';
 
@@ -19,6 +18,7 @@ class PlayerController extends GetxController {
 
   // Observables
   var currentSong = Rxn<Song>();
+  var _currentArt = Rxn<String>();
   var songList = <Song>[].obs;
   var downloadedSongs = <Song>[].obs;
   var currentIndex = 0.obs;
@@ -27,10 +27,17 @@ class PlayerController extends GetxController {
 
   // Getters
   List<Song> get songs => songList;
+
   List<Song> get downloaded => downloadedSongs;
+
   Song? get current => currentSong.value;
+
+  String? get currentArt => _currentArt.value;
+
   int get index => currentIndex.value;
+
   double get vol => volume.value;
+
   bool get loading => isLoading.value;
 
   // Cache management
@@ -135,7 +142,10 @@ class PlayerController extends GetxController {
           id: song.url,
           album: 'أناشيد الثورة السورية',
           title: song.name,
-          artUri: artworkUri, // Can be null
+          artUri: artworkUri,
+          artist: song.artist,
+
+          // Can be null
           displayTitle: song.name,
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
@@ -160,7 +170,8 @@ class PlayerController extends GetxController {
           id: song.url,
           album: 'أناشيد الثورة السورية',
           title: song.name,
-          artUri: artworkUri, // Can be null
+          artUri: artworkUri,
+          // Can be null
           displayTitle: song.name,
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
