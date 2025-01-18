@@ -122,30 +122,48 @@ class _HomePageState extends State<HomePage> {
           color: Colors.black,
           backgroundBlendMode: BlendMode.darken,
           image: DecorationImage(
-            opacity: 0.6,
-            image: const AssetImage('assets/s.png'),
+            opacity: 0.4,
+            image: c.current?.artworkUrl != null
+                ? NetworkImage(c.current!.artworkUrl!)
+                : const AssetImage('assets/s.png') as ImageProvider,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             const SizedBox(height: 50),
             // Title
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  c.current?.name ?? '',
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                c.current?.name ?? '',
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                c.current?.artist ?? '',
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Spacer(),
+
 
             StreamBuilder<Duration>(
               stream: c.player.positionStream,
@@ -164,51 +182,58 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
-
-            // Controls
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.skip_previous,
-                    size: 44,
-                    color: Colors.white,
-                  ),
-                  onPressed: () => c.previousSong(),
-                ),
-                StreamBuilder<bool>(
-                  stream: c.player.playingStream,
-                  builder: (context, snapshot) {
-                    final isPlaying = snapshot.data ?? false;
-                    return IconButton(
-                      icon: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
-                        size: 44,
-                        color: Colors.white,
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Opacity(
+                opacity: 0.5,
+                child: Container(
+                  color: Colors.black,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.navigate_before_outlined,
+                          size: 44,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => c.previousSong(),
                       ),
-                      onPressed: () {
-                        if (isPlaying) {
-                          c.player.pause();
-                        } else {
-                          c.player.play();
-                        }
-                      },
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.skip_next,
-                    size: 44,
-                    color: Colors.white,
+                      StreamBuilder<bool>(
+                        stream: c.player.playingStream,
+                        builder: (context, snapshot) {
+                          final isPlaying = snapshot.data ?? false;
+                          return IconButton(
+                            icon: Icon(
+                              isPlaying ? Icons.pause : Icons.play_arrow,
+                              size: 44,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              if (isPlaying) {
+                                c.player.pause();
+                              } else {
+                                c.player.play();
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.navigate_next_outlined,
+                          size: 44,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => c.nextSong(),
+                      ),
+                      const VolumeControlScreen(),
+                    ],
                   ),
-                  onPressed: () => c.nextSong(),
                 ),
-                const VolumeControlScreen(),
-              ],
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
           ],
         ),
       );
