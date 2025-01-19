@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,6 +17,14 @@ class MusicTile extends StatelessWidget {
 
   final PlayerController c = Get.find<PlayerController>();
 
+  Widget imagePlaceHolder() {
+    return CachedNetworkImage(
+      imageUrl: song.artworkUrl!,
+      placeholder: (context, url) => Image.asset('assets/s.png'),
+      errorWidget: (context, url, error) => Icon(Icons.error),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -29,15 +38,22 @@ class MusicTile extends StatelessWidget {
           leading: Container(
             height: 50,
             width: 50,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
-                    ? NetworkImage(song.artworkUrl.toString()??"")
-                    : const AssetImage('assets/s.png') as ImageProvider,
-                fit: BoxFit.contain,
-              ),
-            ),
+            // decoration: BoxDecoration(
+            //   borderRadius: BorderRadius.circular(8),
+            //   image: DecorationImage(
+            //     image: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
+            //         ? NetworkImage(song.artworkUrl.toString()??"")
+            //         : const AssetImage('assets/s.png') as ImageProvider,
+            //     fit: BoxFit.contain,
+            //   ),
+            // ),
+
+            child: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
+                ? imagePlaceHolder(
+                  )
+                : Image.asset('assets/s.png'),
+
+
           ),
           title: Text(
             song.name,

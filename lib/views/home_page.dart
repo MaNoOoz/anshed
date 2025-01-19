@@ -1,4 +1,5 @@
 import 'package:anshed/widgets/VolDialoag.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
@@ -110,6 +111,13 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ),
+    );
+  }
+  Widget imagePlaceHolder() {
+    return CachedNetworkImage(
+      imageUrl: c.current!.artworkUrl!,
+      placeholder: (context, url) => Image.asset('assets/s.png'),
+      errorWidget: (context, url, error) => Icon(Icons.error),
     );
   }
 

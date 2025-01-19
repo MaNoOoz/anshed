@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
@@ -27,7 +28,43 @@ class PlayerController extends GetxController {
 
   // Getters
   List<Song> get songs => songList;
+@override
+void onInit() {
+  super.onInit();
+  loadCachedSongs();
+  fetchMusicUrls();
+  _initListeners();
+  player.setVolume(volume.value);
+  ever(volume, (value) => player.setVolume(value));
 
+  // Check for new songs to download
+  if (songList.length > downloadedSongs.length) {
+    showDialog(
+      context: Get.context!,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('New Songs Available'),
+          content: Text('${songList.length - downloadedSongs.length} new songs available to download.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await downloadAllSongs();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Download'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
   List<Song> get downloaded => downloadedSongs;
 
   Song? get current => currentSong.value;
@@ -44,15 +81,7 @@ class PlayerController extends GetxController {
   final Map<String, String> _cachedPaths = {};
   final _preloadQueue = <String>{};
 
-  @override
-  void onInit() {
-    super.onInit();
-    loadCachedSongs();
-    fetchMusicUrls();
-    _initListeners();
-    player.setVolume(volume.value);
-    ever(volume, (value) => player.setVolume(value));
-  }
+
 
   void _initListeners() {
     player.processingStateStream.listen((state) {
@@ -133,6 +162,11 @@ class PlayerController extends GetxController {
       Uri? artworkUri;
       if (song.artworkUrl != null && song.artworkUrl!.isNotEmpty) {
         artworkUri = Uri.parse(song.artworkUrl!);
+        // Cache the artwork image
+
+        await DefaultCacheManager().downloadFile(artworkUri.toString());
+
+
       }
 
       String? audioPath = await audioPathFuture;
