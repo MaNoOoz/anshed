@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
@@ -28,43 +27,7 @@ class PlayerController extends GetxController {
 
   // Getters
   List<Song> get songs => songList;
-@override
-void onInit() {
-  super.onInit();
-  loadCachedSongs();
-  fetchMusicUrls();
-  _initListeners();
-  player.setVolume(volume.value);
-  ever(volume, (value) => player.setVolume(value));
 
-  // Check for new songs to download
-  if (songList.length > downloadedSongs.length) {
-    showDialog(
-      context: Get.context!,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('New Songs Available'),
-          content: Text('${songList.length - downloadedSongs.length} new songs available to download.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await downloadAllSongs();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Download'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
   List<Song> get downloaded => downloadedSongs;
 
   Song? get current => currentSong.value;
@@ -81,7 +44,66 @@ void onInit() {
   final Map<String, String> _cachedPaths = {};
   final _preloadQueue = <String>{};
 
+  @override
+  void onInit() {
+    super.onInit();
+    loadCachedSongs();
+    fetchMusicUrls();
+    _initListeners();
+    player.setVolume(volume.value);
+    ever(volume, (value) => player.setVolume(value));
+    checkfornewsongs();
+  }
 
+  checkfornewsongs() {
+    Logger().e("Pressed");
+    // Check for new songs to download
+    if (songList.length > downloadedSongs.length) {
+      showDialog(
+        context: Get.context!,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('New Songs Available'),
+            content: Text(
+                '${songList.length - downloadedSongs.length} new songs available to download.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await downloadAllSongs();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Download'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      showDialog(
+        context: Get.context!,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('لايوجد أناشيد جديدة'),
+            content: Text('لديك جميع الأناشيد'),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('حسنا'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   void _initListeners() {
     player.processingStateStream.listen((state) {
@@ -137,7 +159,7 @@ void onInit() {
       }
     } catch (e) {
       if (songList.isEmpty) {
-        _showErrorSnackbar("حدث خطأ أثناء جلب الأغاني");
+        _showErrorSnackbar("حدث خطأ أثناء جلب  الأناشيد");
       }
       Logger().e('Error fetching music URLs: $e');
     } finally {
@@ -165,8 +187,6 @@ void onInit() {
         // Cache the artwork image
 
         await DefaultCacheManager().downloadFile(artworkUri.toString());
-
-
       }
 
       String? audioPath = await audioPathFuture;
@@ -288,9 +308,9 @@ void onInit() {
           await downloadSong(i);
         }
       }
-      showSuccessSnackbar("تم تحميل جميع الأغاني بنجاح");
+      showSuccessSnackbar("تم تحميل جميع  الأناشيد بنجاح");
     } catch (e) {
-      _showErrorSnackbar("حدث خطأ أثناء تحميل الأغاني");
+      _showErrorSnackbar("حدث خطأ أثناء تحميل  الأناشيد");
       Logger().e('Error downloading all songs: $e');
     }
   }

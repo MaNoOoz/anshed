@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
               onSelected: (String result) {
                 switch (result) {
                   case 'Refresh':
-                    c.fetchMusicUrls();
+                    c.checkfornewsongs();
                     break;
                   case 'Download':
                     c.downloadAllSongs();
@@ -50,11 +50,11 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 const PopupMenuItem<String>(
                   value: 'Refresh',
-                  child: Text('تحديث الأغاني'),
+                  child: Text('تحديث  الأناشيد'),
                 ),
                 const PopupMenuItem<String>(
                   value: 'Download',
-                  child: Text('تحميل جميع الأغاني'),
+                  child: Text('تحميل جميع  الأناشيد'),
                 ),
                 const PopupMenuItem<String>(
                   value: 'Share',
