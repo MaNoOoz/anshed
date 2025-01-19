@@ -25,8 +25,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+
+      bottom: false,
       child: Scaffold(
-        backgroundColor: Colors.black12,
+        backgroundColor: Colors.black87,
         appBar: AppBar(
           centerTitle: true,
           backgroundColor: Colors.transparent,
@@ -36,9 +38,13 @@ class _HomePageState extends State<HomePage> {
             PopupMenuButton<String>(
               onSelected: (String result) {
                 switch (result) {
-                  case 'Refresh':
-                    c.checkfornewsongs();
+                  case 'clear':
+                    c.deleteAllSongs();
                     break;
+                  case 'Refresh':
+                    c.checkfornewsongs(context);
+                    break;
+
                   case 'Download':
                     c.downloadAllSongs();
                     break;
@@ -48,6 +54,10 @@ class _HomePageState extends State<HomePage> {
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'clear',
+                  child: Text('clear'),
+                ),
                 const PopupMenuItem<String>(
                   value: 'Refresh',
                   child: Text('تحديث  الأناشيد'),
@@ -91,22 +101,25 @@ class _HomePageState extends State<HomePage> {
               );
             }
 
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: c.songs.length,
-                    itemBuilder: (context, index) {
-                      return MusicTile(
-                        song: c.songs[index],
-                        index: index,
-                      );
-                    },
+            return Container(
+              color: Colors.black,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: c.songs.length,
+                      itemBuilder: (context, index) {
+                        return MusicTile(
+                          song: c.songs[index],
+                          index: index,
+                        );
+                      },
+                    ),
                   ),
-                ),
-                playerWidget(),
-              ],
+                  playerWidget(),
+                ],
+              ),
             );
           },
         ),
@@ -131,9 +144,10 @@ class _HomePageState extends State<HomePage> {
           backgroundBlendMode: BlendMode.darken,
           image: DecorationImage(
             opacity: 0.4,
-            image: c.current?.artworkUrl != null
-                ? NetworkImage(c.current!.artworkUrl!)
-                : const AssetImage('assets/s.png') as ImageProvider,
+            // image: c.current?.artworkUrl != null
+            //     ? NetworkImage(c.current!.artworkUrl!)
+            //     : const AssetImage('assets/s.png') as ImageProvider,
+            image: const AssetImage('assets/s.png') as ImageProvider,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),

@@ -52,39 +52,38 @@ class PlayerController extends GetxController {
     _initListeners();
     player.setVolume(volume.value);
     ever(volume, (value) => player.setVolume(value));
-    checkfornewsongs();
   }
 
-  checkfornewsongs() {
-    Logger().e("Pressed");
+  checkfornewsongs(context) {
+
+    Logger().e("Pressed songList ${songList.length} and downloadedSongs ${downloadedSongs.length}");
     // Check for new songs to download
-    if (songList.length > downloadedSongs.length) {
+    if (songList.length > downloadedSongs.length || songList.isEmpty) {
       showDialog(
         context: Get.context!,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('New Songs Available'),
-            content: Text(
-                '${songList.length - downloadedSongs.length} new songs available to download.'),
+            title: const Text('يوجد أناشيد جديدة'),
+            content: Text('يوجد أناشيد جديدة للتحميل'),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: const Text('Cancel'),
+                child: const Text('إلغاء'),
               ),
               TextButton(
                 onPressed: () async {
                   await downloadAllSongs();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Download'),
+                child: const Text('تحميل'),
               ),
             ],
           );
         },
       );
-    } else {
+    } else if (songList.length == downloadedSongs.length){
       showDialog(
         context: Get.context!,
         builder: (BuildContext context) {
@@ -105,6 +104,19 @@ class PlayerController extends GetxController {
     }
   }
 
+  // for tetsing
+  deleteAllSongs() {
+    songList.clear();
+    downloadedSongs.clear();
+    _cachedPaths.clear();
+    _preloadQueue.clear();
+  }
+  deleteSong(int currentIndex) {
+    songList.removeAt(currentIndex);
+    // downloadedSongs.removeAt(currentIndex);
+    _cachedPaths.clear();
+    _preloadQueue.clear();
+  }
   void _initListeners() {
     player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
@@ -294,7 +306,7 @@ class PlayerController extends GetxController {
 
       await _downloadAndCacheFile(song.url);
       downloadedSongs.add(song);
-      showSuccessSnackbar('تم تحميل ${song.name} للتشغيل دون إنترنت');
+      // showSuccessSnackbar('تم تحميل ${song.name} للتشغيل دون إنترنت');
     } catch (e) {
       _showErrorSnackbar("حدث خطأ أثناء تحميل الأغنية");
       Logger().e('Error downloading song: $e');
@@ -302,6 +314,7 @@ class PlayerController extends GetxController {
   }
 
   Future<void> downloadAllSongs() async {
+    await fetchMusicUrls();
     try {
       for (var i = 0; i < songList.length; i++) {
         if (!downloadedSongs.any((s) => s.url == songList[i].url)) {
