@@ -66,35 +66,23 @@ class MusicTile extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // if (isDownloaded)
-              //   const Icon(
-              //     Icons.download_done,
-              //     color: Colors.green,
-              //   ),
-              // if (!isDownloaded)
-              //   IconButton(
-              //     icon: const Icon(
-              //       Icons.download_for_offline,
-              //       color: Colors.white,
-              //     ),
-              //     onPressed: () {
-              //       Logger().i('downloadSong song at index $index $isDownloaded');
-              //       c.downloadSong(index);
-              //     },
-              //   ),
-              IconButton(
-                icon: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
+              if (isDownloaded)
+                const Icon(
+                  Icons.download_done,
+                  color: Colors.green,
                 ),
-                onPressed: () {
-                  if (isCurrentSong) {
-                    c.togglePlayPause();
-                  } else {
-                    c.playSong(index);
-                  }
-                },
-              ),
+              if (!isDownloaded)
+                IconButton(
+                  icon: const Icon(
+                    Icons.download_for_offline,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    Logger()
+                        .i('downloadSong song at index $index $isDownloaded');
+                    c.downloadSong(index);
+                  },
+                ),
             ],
           ),
           onTap: () {
@@ -102,7 +90,8 @@ class MusicTile extends StatelessWidget {
 
             if (isCurrentSong) {
               c.togglePlayPause();
-            } else {
+            }
+            else {
               c.playSong(index);
             }
           },

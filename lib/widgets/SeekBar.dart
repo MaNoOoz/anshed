@@ -2,13 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-class SeekBar extends StatefulWidget {
+class mSeekBar extends StatefulWidget {
   final Duration duration;
   final Duration position;
   final Duration bufferedPosition;
   final ValueChanged<Duration>? onChanged;
 
-  const SeekBar({
+  const mSeekBar({
     super.key,
     required this.duration,
     required this.position,
@@ -17,10 +17,10 @@ class SeekBar extends StatefulWidget {
   });
 
   @override
-  _SeekBarState createState() => _SeekBarState();
+  _mSeekBarState createState() => _mSeekBarState();
 }
 
-class _SeekBarState extends State<SeekBar> {
+class _mSeekBarState extends State<mSeekBar> {
   double? _dragValue;
 
   @override

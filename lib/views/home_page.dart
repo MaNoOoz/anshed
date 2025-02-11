@@ -136,18 +136,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget playerWidget() {
     return Obx(() {
-      return Container(
+      return
+        Container(
         height: 300,
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.black,
           backgroundBlendMode: BlendMode.darken,
-          image: DecorationImage(
+          image:
+
+          DecorationImage(
             opacity: 0.4,
-            // image: c.current?.artworkUrl != null
-            //     ? NetworkImage(c.current!.artworkUrl!)
-            //     : const AssetImage('assets/s.png') as ImageProvider,
-            image: const AssetImage('assets/s.png') as ImageProvider,
+            image: c.current?.artworkUrl != null && c.current!.artworkUrl!.isNotEmpty
+                ? NetworkImage(c.current!.artworkUrl.toString())
+                : const AssetImage('assets/s.png') as ImageProvider,
+            // image: const AssetImage('assets/s.png') as ImageProvider,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
@@ -184,6 +187,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+
             Spacer(),
 
 
@@ -192,14 +196,17 @@ class _HomePageState extends State<HomePage> {
               builder: (context, snapshot) {
                 final position = snapshot.data ?? Duration.zero;
                 final duration = c.player.duration ?? Duration.zero;
-                final bufferedPosition = c.player.bufferedPosition;
 
-                return SeekBar(
-                  duration: duration,
-                  position: position,
-                  bufferedPosition: bufferedPosition,
-                  onChanged: (duration) {
-                    c.player.seek(duration);
+                return StreamBuilder<Duration>(
+                  stream: c.player.bufferedPositionStream,
+                  builder: (context, bufferedSnapshot) {
+                    final bufferedPosition = bufferedSnapshot.data ?? Duration.zero;
+
+                    return mSeekBar(
+                      duration: duration,
+                      bufferedPosition: bufferedPosition,
+                      position: position,
+                    );
                   },
                 );
               },
