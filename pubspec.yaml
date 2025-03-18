@@ -47,6 +47,7 @@ dependencies:
   rename:
   logger:
   share_plus:
+  url_launcher: ^6.3.1
   dio:
   path_provider:
   #  flutter_local_notifications:

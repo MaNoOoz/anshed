@@ -8,6 +8,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
 import '../widgets/music_tile.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -19,8 +20,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PlayerController c = Get.find<PlayerController>();
   final PanelController panelController = PanelController();
-  static const String BASE_URL_flutter =
-      "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
+  static const String BASE_URL_flutter = "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
+  static const String other_apps = "https://play.google.com/store/apps/dev?id=8389389659889758696";
+  final Uri _url = Uri.parse('$other_apps');
+
+  Future<void> _launchUrl() async {
+    if (!await launchUrl(_url)) {
+      throw Exception('Could not launch $_url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +46,7 @@ class _HomePageState extends State<HomePage> {
             PopupMenuButton<String>(
               onSelected: (String result) {
                 switch (result) {
+                   // todo delete later
                   case 'clear':
                     c.deleteAllSongs();
                     break;
@@ -51,6 +60,12 @@ class _HomePageState extends State<HomePage> {
                   case 'Share':
                     Share.share('Check out this app: $BASE_URL_flutter');
                     break;
+                  case 'OtherApps':
+                    _launchUrl();
+                    // Share.share('Check out this app: $BASE_URL_flutter');
+                    break;
+
+
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -69,6 +84,10 @@ class _HomePageState extends State<HomePage> {
                 const PopupMenuItem<String>(
                   value: 'Share',
                   child: Text('مشاركة التطبيق'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'OtherApps',
+                  child: Text('تطبيقات اخرى'),
                 ),
               ],
               icon: const Icon(Icons.settings),
