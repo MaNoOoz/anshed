@@ -35,7 +35,6 @@ class Song {
     return Song(
       url: songUrl,
       name: obj.get<String>('Name') ?? '',
-      // Use 'Name' to match the JSON
       artist: obj.get<String>('artist'),
       artworkUrl: obj.get<String>('artworkUrl'), // Get artwork URL if exists
       createdAt: obj.get<DateTime>('createdAt'),
@@ -59,4 +58,15 @@ class Song {
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Song &&
+        other.url == url &&  // Compare based on url
+        other.name == name;  // Optionally include name for more specific comparison
+  }
+
+  @override
+  int get hashCode => url.hashCode ^ name.hashCode; // Unique hash based on url and name
 }

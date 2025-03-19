@@ -1,16 +1,14 @@
 import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../adaptive_widgets/appbar.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
 import '../widgets/music_tile.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../widgets/text_styles.dart';
 
 const String BASE_URL_flutter =
@@ -19,11 +17,12 @@ const String other_apps =
     "https://play.google.com/store/apps/dev?id=8389389659889758696";
 
 class HomePage extends StatelessWidget {
-   HomePage({Key? key}) : super(key: key);
+  HomePage({Key? key}) : super(key: key);
 
   final PlayerController c = Get.find<PlayerController>();
-
   final PanelController panelController = PanelController();
+  final TextEditingController searchController =
+      TextEditingController(); // Controller for search bar
 
   @override
   Widget build(BuildContext context) {
@@ -46,73 +45,92 @@ class HomePage extends StatelessWidget {
           ),
           actions: [
             Obx(() => Row(
-              children: [
-
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("${c.downloadedSongs.length}"),
-                ),
-                 Padding(
-                   padding: const EdgeInsets.all(8.0),
-                   child: const Icon(
-                    Icons.download_for_offline_outlined,
-                    color: Colors.white,
-                                   ),
-                 ),
-
-
-              ],
-            )),
-          ],
-        ),
-        body: Obx(
-          () {
-            if (c.loading && c.songs.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            if (c.songs.isEmpty && c.downloaded.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('تحديث'),
-                    IconButton(
-                      onPressed: () => c.fetchMusicUrls(),
-                      icon: const Icon(
-                        Icons.refresh,
-                        size: 55,
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text("${c.downloadedSongs.length}"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: const Icon(
+                        Icons.download_for_offline_outlined,
+                        color: Colors.white,
                       ),
                     ),
                   ],
-                ),
-              );
-            }
+                )),
+          ],
+        ),
+        body: Obx(() {
+          if (c.loading && c.songs.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-            return Container(
-              color: Colors.black,
+          if (c.songs.isEmpty && c.downloaded.isEmpty) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
+                  const Text('تحديث'),
+                  IconButton(
+                    onPressed: () => c.fetchMusicUrls(),
+                    icon: const Icon(
+                      Icons.refresh,
+                      size: 55,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Container(
+            color: Colors.black,
+            child: Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: CupertinoSearchTextField(
+                    controller: searchController,
+                    placeholder: 'ابحث عن أنشودة...',
+                    style: textStyle(context),
+                    onChanged: (query) {
+                      c.filterSongs(
+                          query); // Filter songs based on search query
+                    },
+                  ),
+                ),
+                Obx(() {
+                  var allSongs = [
+                    ...c.filteredSongs,
+                    ...c.songList,
+                    ...c.downloadedSongs
+                  ];
+                  // Remove duplicates by converting to Set and then back to List
+                  var uniqueSongs =
+                      allSongs.toSet().toList(); // Removing duplicates
+                  return Expanded(
                     child: ListView.builder(
                       shrinkWrap: true,
-                      itemCount: c.songs.length,
+                      itemCount: uniqueSongs.length,
+                      // Use filteredSongs instead of songs
                       itemBuilder: (context, index) {
                         return MusicTile(
-                          song: c.songs[index],
+                          song: uniqueSongs[index],
                           index: index,
                         );
                       },
                     ),
-                  ),
-                  playerWidget(),
-                ],
-              ),
-            );
-          },
-        ),
+                  );
+                }),
+                playerWidget(context),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }
@@ -125,7 +143,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget playerWidget() {
+  Widget playerWidget(context) {
     return Obx(() {
       return Container(
         height: 300,
@@ -139,7 +157,6 @@ class HomePage extends StatelessWidget {
                     c.current!.artworkUrl!.isNotEmpty
                 ? NetworkImage(c.current!.artworkUrl.toString())
                 : const AssetImage('assets/s.png') as ImageProvider,
-            // image: const AssetImage('assets/s.png') as ImageProvider,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
@@ -147,20 +164,14 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
             // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                c.current?.name ?? '',
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child: Text(c.current?.name ?? '',
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: mediumTextStyle(context)),
             ),
 
             Padding(
@@ -169,11 +180,7 @@ class HomePage extends StatelessWidget {
                 c.current?.artist ?? '',
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white,
-                ),
+                style: textStyle(context),
               ),
             ),
 
@@ -258,4 +265,3 @@ class HomePage extends StatelessWidget {
     });
   }
 }
-

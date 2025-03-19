@@ -70,6 +70,7 @@ class AdaptiveTextField extends StatelessWidget {
             : null,
         autofocus: autofocus,
         maxLines: maxLines,
+
         textInputAction: textInputAction,
         decoration: WidgetStatePropertyAll(BoxDecoration(
           color: fillColor,
@@ -97,6 +98,7 @@ class AdaptiveTextField extends StatelessWidget {
         hintText: hintText,
         prefixIcon: prefix,
         suffixIcon: suffix,
+
         border: OutlineInputBorder(
           borderSide: borderWidth > 0
               ? BorderSide(width: borderWidth)

@@ -24,6 +24,8 @@ class PlayerController extends GetxController {
   var currentIndex = 0.obs;
   var volume = 1.0.obs;
   var isLoading = false.obs;
+// Reactive list for filtered songs
+  RxList<Song> filteredSongs = <Song>[].obs;
 
   // Getters
   List<Song> get songs => songList;
@@ -47,11 +49,39 @@ class PlayerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    Logger().e('Songs length: ${songList.length}');
+
+    Logger().e('Songs length after adding test: ${songs.length}');
+
+
     loadCachedSongs();
     fetchMusicUrls();
     _initListeners();
+    filteredSongs.assignAll(songList); // Initialize with all songs
+
     player.setVolume(volume.value);
     ever(volume, (value) => player.setVolume(value));
+  }
+  @override
+  void onReady() {
+    super.onReady();
+    Logger().e('onReady : Songs length after adding test: ${songs.length}');
+
+    // Additional logic after the widget is rendered
+    filteredSongs.assignAll(songList); // Initialize with all songs
+
+  }
+// Method to filter songs based on search query
+  void filterSongs(String query) {
+    if (query.isEmpty) {
+      // If the query is empty, show all songs
+      filteredSongs.assignAll(songs);
+    } else {
+      // Filter songs that contain the query (case-insensitive)
+      filteredSongs.assignAll(
+        songs.where((song) => song.name.toLowerCase().contains(query.toLowerCase())).toList(),
+      );
+    }
   }
 
   Future<void> checkfornewsongs(context) async {
@@ -130,14 +160,21 @@ class PlayerController extends GetxController {
 
   Future<void> loadCachedSongs() async {
     try {
+      Logger().e('Loading cached songs...');
       var file = await cacheManager.getFileFromCache(jsonCacheKey);
       if (file != null) {
         final jsonString = await file.file.readAsString();
+        Logger().e('Cached JSON Data: $jsonString');
         final List<dynamic> jsonData = jsonDecode(jsonString);
         final List<Song> cachedSongs =
-            jsonData.map((e) => Song.fromJson(e)).toList();
-        songList.value = cachedSongs; // Use cached songs if available
+        jsonData.map((e) => Song.fromJson(e)).toList();
+
+        Logger().e('Loaded Cached Songs Count: ${cachedSongs.length}');
+
+        songList.value = cachedSongs;
         downloadedSongs.value = cachedSongs;
+      } else {
+        Logger().e('No cached songs found.');
       }
     } catch (e) {
       Logger().e('Error loading cached songs: $e');
@@ -145,21 +182,27 @@ class PlayerController extends GetxController {
   }
 
   Future<void> fetchMusicUrls() async {
-    Logger().e('fetchMusicUrls');
-
+    Logger().e('Fetching songs from Parse server...');
     try {
       isLoading.value = true;
       final query = QueryBuilder<ParseObject>(ParseObject('Song'))
         ..orderByDescending('updatedAt');
 
       final response = await query.query();
+      Logger().e('Response received: ${response.results}');
 
       if (response.success && response.results != null) {
         final fetchedSongs = response.results!
             .map((result) => Song.fromParseObject(result as ParseObject))
             .toList();
 
-        songList.value = fetchedSongs;
+        Logger().e('Fetched Songs Count: ${fetchedSongs.length}');
+
+        if (fetchedSongs.isNotEmpty) {
+          songList.value = fetchedSongs;
+        } else {
+          Logger().e('No songs found.');
+        }
 
         // Cache the JSON data
         await cacheManager.putFile(
@@ -169,22 +212,20 @@ class PlayerController extends GetxController {
           key: jsonCacheKey,
         );
       } else {
-        if (songList.isEmpty) {
-          _showErrorSnackbar("تحقق من إتصالك بالأنترنت");
-        }
         Logger().e('Failed to load songs: ${response.error?.message}');
+        _showErrorSnackbar("تحقق من إتصالك بالأنترنت");
       }
     } catch (e) {
-      if (songList.isEmpty) {
-        _showErrorSnackbar("حدث خطأ أثناء جلب  الأناشيد");
-      }
       Logger().e('Error fetching music URLs: $e');
+      _showErrorSnackbar("حدث خطأ أثناء جلب  الأناشيد");
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> playSong(int index) async {
+    Logger().e('playSong  at $index');
+
     if (index < 0 || index >= songList.length || isLoading.value) return;
 
     try {
