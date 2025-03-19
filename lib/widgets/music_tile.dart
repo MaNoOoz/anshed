@@ -1,3 +1,4 @@
+import 'package:anshed/widgets/text_styles.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -57,11 +58,7 @@ class MusicTile extends StatelessWidget {
           title: Text(
             song.name,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: mediumTextStyle(context, bold: isPlaying ? true : false),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -90,8 +87,7 @@ class MusicTile extends StatelessWidget {
 
             if (isCurrentSong) {
               c.togglePlayPause();
-            }
-            else {
+            } else {
               c.playSong(index);
             }
           },

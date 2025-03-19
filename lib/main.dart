@@ -1,9 +1,11 @@
+import 'package:anshed/views/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 import 'controllers/PlayerController.dart';
+import 'controllers/SettingsController.dart';
 import 'views/home_page.dart';
 
 // Check for internet connection
@@ -32,18 +34,26 @@ Future<void> main() async {
   await Parse().initialize(appId, parseServerUrl, clientKey: clientKey);
   Get.put(PlayerController()); // Or Get.lazyPut(() => PlayerController());
 
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SettingsController settingsController = Get.put(SettingsController());
+
+   MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+        getPages: [
+          GetPage(name: '/Settings', page: () => SettingsScreen()),
+
+        ],
         debugShowCheckedModeBanner: false,
+        darkTheme: ThemeData.dark(),
         theme: ThemeData(
           useMaterial3: true,
+
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.green,
             brightness: Brightness.dark,
@@ -56,6 +66,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
         textDirection: TextDirection.rtl,
-        home: const HomePage());
+        home:  HomePage());
   }
 }

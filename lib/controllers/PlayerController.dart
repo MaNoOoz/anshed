@@ -54,9 +54,10 @@ class PlayerController extends GetxController {
     ever(volume, (value) => player.setVolume(value));
   }
 
-  checkfornewsongs(context) {
-
-    Logger().e("Pressed songList ${songList.length} and downloadedSongs ${downloadedSongs.length}");
+  Future<void> checkfornewsongs(context) async {
+    Logger().e(
+        "Pressed songList ${songList.length} and downloadedSongs ${downloadedSongs.length}");
+    await fetchMusicUrls();
     // Check for new songs to download
     if (songList.length > downloadedSongs.length || songList.isEmpty) {
       showDialog(
@@ -83,7 +84,7 @@ class PlayerController extends GetxController {
           );
         },
       );
-    } else if (songList.length == downloadedSongs.length){
+    } else if (songList.length == downloadedSongs.length) {
       showDialog(
         context: Get.context!,
         builder: (BuildContext context) {
@@ -111,12 +112,14 @@ class PlayerController extends GetxController {
     _cachedPaths.clear();
     _preloadQueue.clear();
   }
+
   deleteSong(int currentIndex) {
     songList.removeAt(currentIndex);
     // downloadedSongs.removeAt(currentIndex);
     _cachedPaths.clear();
     _preloadQueue.clear();
   }
+
   void _initListeners() {
     player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
@@ -142,6 +145,8 @@ class PlayerController extends GetxController {
   }
 
   Future<void> fetchMusicUrls() async {
+    Logger().e('fetchMusicUrls');
+
     try {
       isLoading.value = true;
       final query = QueryBuilder<ParseObject>(ParseObject('Song'))
@@ -313,13 +318,23 @@ class PlayerController extends GetxController {
     }
   }
 
+  bool areListsEqual(List list1, List list2) {
+    return list1 == list2;
+  }
+
   Future<void> downloadAllSongs() async {
+    Logger().e('downloadAllSongs');
     await fetchMusicUrls();
     try {
       for (var i = 0; i < songList.length; i++) {
         if (!downloadedSongs.any((s) => s.url == songList[i].url)) {
           await downloadSong(i);
         }
+      }
+      if (areListsEqual(songList, downloadedSongs)) {
+        showSuccessSnackbar(' متوفر بالفعل للتشغيل دون إنترنت');
+      } else {
+        showSuccessSnackbar(' متوفر بالفعل للتشغيل دون إنترنت');
       }
       showSuccessSnackbar("تم تحميل جميع  الأناشيد بنجاح");
     } catch (e) {

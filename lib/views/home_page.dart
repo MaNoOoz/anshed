@@ -5,93 +5,64 @@ import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
+import '../adaptive_widgets/appbar.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
 import '../widgets/music_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+import '../widgets/text_styles.dart';
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
+const String BASE_URL_flutter =
+    "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
+const String other_apps =
+    "https://play.google.com/store/apps/dev?id=8389389659889758696";
 
-class _HomePageState extends State<HomePage> {
+class HomePage extends StatelessWidget {
+   HomePage({Key? key}) : super(key: key);
+
   final PlayerController c = Get.find<PlayerController>();
-  final PanelController panelController = PanelController();
-  static const String BASE_URL_flutter = "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
-  static const String other_apps = "https://play.google.com/store/apps/dev?id=8389389659889758696";
-  final Uri _url = Uri.parse('$other_apps');
 
-  Future<void> _launchUrl() async {
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
-    }
-  }
+  final PanelController panelController = PanelController();
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-
       bottom: false,
       child: Scaffold(
         backgroundColor: Colors.black87,
-        appBar: AppBar(
+        appBar: AdaptiveAppBar(
           centerTitle: true,
-          backgroundColor: Colors.transparent,
-          title: const Text("أناشيد الثورة السورية"),
-          actions: [
-            Obx(() => Text("${c.songs.length}")),
-            PopupMenuButton<String>(
-              onSelected: (String result) {
-                switch (result) {
-                   // todo delete later
-                  case 'clear':
-                    c.deleteAllSongs();
-                    break;
-                  case 'Refresh':
-                    c.checkfornewsongs(context);
-                    break;
-
-                  case 'Download':
-                    c.downloadAllSongs();
-                    break;
-                  case 'Share':
-                    Share.share('Check out this app: $BASE_URL_flutter');
-                    break;
-                  case 'OtherApps':
-                    _launchUrl();
-                    // Share.share('Check out this app: $BASE_URL_flutter');
-                    break;
-
-
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'clear',
-                  child: Text('clear'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'Refresh',
-                  child: Text('تحديث  الأناشيد'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'Download',
-                  child: Text('تحميل جميع  الأناشيد'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'Share',
-                  child: Text('مشاركة التطبيق'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'OtherApps',
-                  child: Text('تطبيقات اخرى'),
-                ),
-              ],
-              icon: const Icon(Icons.settings),
+          title: Text(
+            "أناشيد الثورة السورية",
+            style: mediumTextStyle(context),
+          ),
+          leading: IconButton(
+            icon: const Icon(
+              Icons.settings,
+              color: Colors.white,
             ),
+            onPressed: () => Get.toNamed("/Settings"),
+          ),
+          actions: [
+            Obx(() => Row(
+              children: [
+
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("${c.downloadedSongs.length}"),
+                ),
+                 Padding(
+                   padding: const EdgeInsets.all(8.0),
+                   child: const Icon(
+                    Icons.download_for_offline_outlined,
+                    color: Colors.white,
+                                   ),
+                 ),
+
+
+              ],
+            )),
           ],
         ),
         body: Obx(
@@ -145,6 +116,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
   Widget imagePlaceHolder() {
     return CachedNetworkImage(
       imageUrl: c.current!.artworkUrl!,
@@ -155,18 +127,16 @@ class _HomePageState extends State<HomePage> {
 
   Widget playerWidget() {
     return Obx(() {
-      return
-        Container(
+      return Container(
         height: 300,
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.black,
           backgroundBlendMode: BlendMode.darken,
-          image:
-
-          DecorationImage(
+          image: DecorationImage(
             opacity: 0.4,
-            image: c.current?.artworkUrl != null && c.current!.artworkUrl!.isNotEmpty
+            image: c.current?.artworkUrl != null &&
+                    c.current!.artworkUrl!.isNotEmpty
                 ? NetworkImage(c.current!.artworkUrl.toString())
                 : const AssetImage('assets/s.png') as ImageProvider,
             // image: const AssetImage('assets/s.png') as ImageProvider,
@@ -209,7 +179,6 @@ class _HomePageState extends State<HomePage> {
 
             Spacer(),
 
-
             StreamBuilder<Duration>(
               stream: c.player.positionStream,
               builder: (context, snapshot) {
@@ -219,7 +188,8 @@ class _HomePageState extends State<HomePage> {
                 return StreamBuilder<Duration>(
                   stream: c.player.bufferedPositionStream,
                   builder: (context, bufferedSnapshot) {
-                    final bufferedPosition = bufferedSnapshot.data ?? Duration.zero;
+                    final bufferedPosition =
+                        bufferedSnapshot.data ?? Duration.zero;
 
                     return mSeekBar(
                       duration: duration,
@@ -288,3 +258,4 @@ class _HomePageState extends State<HomePage> {
     });
   }
 }
+

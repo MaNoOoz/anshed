@@ -37,15 +37,20 @@ dependencies:
   just_audio_web:
   flutter_spinkit:
   sliding_up_panel:
+  fluent_ui: ^4.9.2
+
   parse_server_sdk_flutter: ^9.0.0
   solid_bottom_sheet:
   audio_session:
+  in_app_purchase: ^3.0.6  # Use the latest version
+
   shared_preferences:
   just_audio_background:
   audio_service:
   permission_handler:
   rename:
   logger:
+  google_fonts:
   share_plus:
   url_launcher: ^6.3.1
   dio:
