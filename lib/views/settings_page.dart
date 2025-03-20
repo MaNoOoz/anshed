@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../adaptive_widgets/appbar.dart';
-import '../adaptive_widgets/buttons.dart';
 import '../adaptive_widgets/icons.dart';
 import '../adaptive_widgets/listtile.dart';
 import '../controllers/PlayerController.dart';
@@ -13,7 +12,6 @@ import '../models/SettingItem.dart';
 import '../utils/constants.dart';
 import '../widgets/color_icon.dart';
 import '../widgets/text_styles.dart';
-import 'home_page.dart';
 
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});
@@ -82,6 +80,7 @@ class SettingsScreen extends StatelessWidget {
 final PlayerController c = Get.find<PlayerController>();
 final Uri other_apps = Uri.parse('$other_apps');
 final Uri main_app = Uri.parse('${Constants.BASE_URL_flutter}');
+final Uri delete_ads = Uri.parse('${Constants.delete_ads}');
 
 Future<void> _launchUrl(Uri url) async {
   if (!await launchUrl(url)) {
@@ -90,6 +89,17 @@ Future<void> _launchUrl(Uri url) async {
 }
 
 List<SettingItem> settingScreenData(BuildContext context) => [
+      SettingItem(
+        title: "حذف الإعلانات      ",
+        icon: Icons.payment_sharp,
+        color: Colors.accents[5],
+        hasNavigation: true,
+        onTap: (context) async {
+          // _launchUrl(delete_ads);
+          // todo
+          c.deleteAllSongs();
+        },
+      ),
       SettingItem(
         title: "تحميل الأناشيد",
         icon: Icons.download_rounded,

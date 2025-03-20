@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:logger/logger.dart';
 
 class AdController extends GetxController {
   // Banner Ad
@@ -53,6 +54,10 @@ class AdController extends GetxController {
 
   // Show Interstitial Ad
   void showInterstitialAd() {
+    if (interstitialAd == null) {
+      Logger().e('No interstitial ad loaded.');
+      return;
+    }
     if (interstitialAd != null) {
       interstitialAd!.show();
       interstitialAd = null;

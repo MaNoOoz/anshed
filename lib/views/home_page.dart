@@ -1,7 +1,6 @@
 import 'package:anshed/views/settings_page.dart';
 import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -11,7 +10,6 @@ import '../adaptive_widgets/appbar.dart';
 import '../controllers/AdController.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
-import '../widgets/item.dart';
 import '../widgets/music_tile.dart';
 import '../widgets/text_styles.dart';
 
@@ -33,12 +31,11 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          adController.showInterstitialAd();
-        },
-        child: Icon(Icons.ad_units),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () async {
+      //   },
+      //   child: Icon(Icons.ad_units),
+      // ),
       // backgroundColor: Colors.black87,
       appBar: AdaptiveAppBar(
         centerTitle: true,
@@ -100,35 +97,21 @@ class HomePage extends StatelessWidget {
           // color: Colors.black,
           child: Column(
             children: [
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CupertinoSearchTextField(
-                  controller: searchController,
-                  placeholder: 'ابحث عن أنشودة...',
-                  style: textStyle(context),
-                  onChanged: (query) {
-                    c.filterSongs(query); // Filter songs based on search query
-                  },
-                ),
-              ),
-
               Obx(() {
-                // Remove duplicates by converting to Set and then back to List
                 return Expanded(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: c.filteredSongs.length,
+                    itemCount: c.songs.length,
                     // Use filteredSongs instead of songs
                     itemBuilder: (context, index) {
                       // Get the song from the uniqueSongs list
-                      var song = c.filteredSongs[index];
+                      var song = c.songs[index];
 
                       return MusicTile(
                         song: song,
                         index: index,
                         onTap: () {
-                          c.playSong(index);
+                          c.playSong2(index);
                         },
                       );
                     },
@@ -137,10 +120,10 @@ class HomePage extends StatelessWidget {
               }),
               Obx(() => adController.isBannerAdLoaded.value
                   ? SizedBox(
-                height: adController.bannerAd.size.height.toDouble(),
-                width: adController.bannerAd.size.width.toDouble(),
-                child: AdWidget(ad: adController.bannerAd),
-              )
+                      height: adController.bannerAd.size.height.toDouble(),
+                      width: adController.bannerAd.size.width.toDouble(),
+                      child: AdWidget(ad: adController.bannerAd),
+                    )
                   : SizedBox()),
               playerWidget(context),
             ],
@@ -153,8 +136,11 @@ class HomePage extends StatelessWidget {
   Widget imagePlaceHolder() {
     return CachedNetworkImage(
       imageUrl: c.current!.artworkUrl!,
+
+      fit: BoxFit.cover, // Cover the entire space
+
       placeholder: (context, url) => Image.asset('assets/s.png'),
-      errorWidget: (context, url, error) => Icon(Icons.error),
+      errorWidget: (context, url, error) => Image.asset('assets/s.png'),
     );
   }
 
@@ -170,7 +156,8 @@ class HomePage extends StatelessWidget {
             opacity: 0.5,
             image: c.current?.artworkUrl != null &&
                     c.current!.artworkUrl!.isNotEmpty
-                ? NetworkImage(c.current!.artworkUrl.toString())
+                ? CachedNetworkImageProvider(c.current!.artworkUrl ??
+                    "assets/s.png") // Use CachedNetworkImageProvider
                 : const AssetImage('assets/s.png') as ImageProvider,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
@@ -274,7 +261,10 @@ class HomePage extends StatelessWidget {
                           size: 44,
                           color: Colors.white,
                         ),
-                        onPressed: () => c.nextSong(),
+                        onPressed: () {
+                          c.nextSong();
+                          adController.showInterstitialAd();
+                        },
                       ),
                       const VolumeControlScreen(),
                     ],
