@@ -16,7 +16,7 @@ TextStyle bigTextStyle(BuildContext context,
 
 TextStyle mediumTextStyle(BuildContext context,
     {double opacity = 1, bool bold = true}) {
-  return arDefaultFontStyle.copyWith(
+  return ar2DefaultFontStyle.copyWith(
     fontSize: 24,
     fontWeight: bold ? FontWeight.w900 : FontWeight.normal,
     color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -25,7 +25,7 @@ TextStyle mediumTextStyle(BuildContext context,
 
 TextStyle textStyle(BuildContext context,
     {double opacity = 1, bool bold = true}) {
-  return defaultFontStyle.copyWith(
+  return ar2DefaultFontStyle.copyWith(
     fontSize: 19,
     fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
     color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -34,7 +34,7 @@ TextStyle textStyle(BuildContext context,
 
 TextStyle subtitleTextStyle(BuildContext context,
     {double opacity = 1, bool bold = false}) {
-  return defaultFontStyle.copyWith(
+  return ar2DefaultFontStyle.copyWith(
     fontSize: 15,
     fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
     color: Colors.grey.withAlpha(200),

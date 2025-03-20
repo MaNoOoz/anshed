@@ -27,10 +27,10 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AdaptiveAppBar(
-        leading: AdaptiveBackButton(),
+        // leading: AdaptiveBackButton(),
         title: Text("إعدادت", style: bigTextStyle(context, bold: false)),
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
       ),
       body: Center(
         child: Container(

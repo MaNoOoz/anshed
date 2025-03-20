@@ -1,3 +1,4 @@
+import 'package:anshed/views/settings_page.dart';
 import 'package:anshed/widgets/VolDialoag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,112 +27,108 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Scaffold(
-        backgroundColor: Colors.black87,
-        appBar: AdaptiveAppBar(
-          centerTitle: true,
-          title: Text(
-            "أناشيد الثورة السورية",
-            style: mediumTextStyle(context),
-          ),
-          leading: IconButton(
-            icon: const Icon(
-              Icons.settings,
-              color: Colors.white,
-            ),
-            onPressed: () => Get.toNamed("/Settings"),
-          ),
-          actions: [
-            Obx(() => Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text("${c.downloadedSongs.length}"),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: const Icon(
-                        Icons.download_for_offline_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                )),
-          ],
+    return Scaffold(
+      // backgroundColor: Colors.black87,
+      appBar: AdaptiveAppBar(
+        centerTitle: true,
+        title: Text(
+          "أناشيد الثورة السورية",
+          style: mediumTextStyle(context),
         ),
-        body: Obx(() {
-          if (c.loading && c.songs.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+        leading: IconButton(
+          icon: const Icon(
+            Icons.settings,
+            color: Colors.white,
+          ),
+          onPressed: () => Get.to(SettingsScreen()),
+        ),
+        // actions: [
+        //   Obx(() => Row(
+        //         children: [
+        //           Padding(
+        //             padding: const EdgeInsets.all(8.0),
+        //             child: Text("${c.downloadedSongs.length}"),
+        //           ),
+        //           Padding(
+        //             padding: const EdgeInsets.all(8.0),
+        //             child: const Icon(
+        //               Icons.download_for_offline_outlined,
+        //               color: Colors.white,
+        //             ),
+        //           ),
+        //         ],
+        //       )),
+        // ],
+      ),
+      body: Obx(() {
+        if (c.loading && c.songs.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
-          if (c.songs.isEmpty && c.downloaded.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('تحديث'),
-                  IconButton(
-                    onPressed: () => c.fetchMusicUrls(),
-                    icon: const Icon(
-                      Icons.refresh,
-                      size: 55,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Container(
-            color: Colors.black,
+        if (c.songs.isEmpty && c.downloaded.isEmpty) {
+          return Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Search Bar
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CupertinoSearchTextField(
-                    controller: searchController,
-                    placeholder: 'ابحث عن أنشودة...',
-                    style: textStyle(context),
-                    onChanged: (query) {
-                      c.filterSongs(
-                          query); // Filter songs based on search query
-                    },
+                const Text('تحديث'),
+                IconButton(
+                  onPressed: () => c.fetchMusicUrls(),
+                  icon: const Icon(
+                    Icons.refresh,
+                    size: 55,
                   ),
                 ),
-                Obx(() {
-                  var allSongs = [
-                    ...c.filteredSongs,
-                    ...c.songList,
-                    ...c.downloadedSongs
-                  ];
-                  // Remove duplicates by converting to Set and then back to List
-                  var uniqueSongs =
-                      allSongs.toSet().toList(); // Removing duplicates
-                  return Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: uniqueSongs.length,
-                      // Use filteredSongs instead of songs
-                      itemBuilder: (context, index) {
-                        return MusicTile(
-                          song: uniqueSongs[index],
-                          index: index,
-                        );
-                      },
-                    ),
-                  );
-                }),
-                playerWidget(context),
               ],
             ),
           );
-        }),
-      ),
+        }
+
+        return Container(
+          // color: Colors.black,
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoSearchTextField(
+                  controller: searchController,
+                  placeholder: 'ابحث عن أنشودة...',
+                  style: textStyle(context),
+                  onChanged: (query) {
+                    c.filterSongs(query); // Filter songs based on search query
+                  },
+                ),
+              ),
+              Obx(() {
+                var allSongs = [
+                  ...c.filteredSongs,
+                  ...c.songList,
+                  ...c.downloadedSongs
+                ];
+                // Remove duplicates by converting to Set and then back to List
+                var uniqueSongs =
+                    allSongs.toSet().toList(); // Removing duplicates
+                return Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: uniqueSongs.length,
+                    // Use filteredSongs instead of songs
+                    itemBuilder: (context, index) {
+                      return MusicTile(
+                        song: uniqueSongs[index],
+                        index: index,
+                      );
+                    },
+                  ),
+                );
+              }),
+              playerWidget(context),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -146,13 +143,13 @@ class HomePage extends StatelessWidget {
   Widget playerWidget(context) {
     return Obx(() {
       return Container(
-        height: 300,
+        height: 280,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.black,
-          backgroundBlendMode: BlendMode.darken,
+          // color: Colors.black,
+          // backgroundBlendMode: BlendMode.darken,
           image: DecorationImage(
-            opacity: 0.4,
+            opacity: 0.5,
             image: c.current?.artworkUrl != null &&
                     c.current!.artworkUrl!.isNotEmpty
                 ? NetworkImage(c.current!.artworkUrl.toString())
@@ -173,6 +170,7 @@ class HomePage extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: mediumTextStyle(context)),
             ),
+            // SubTitle
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -180,7 +178,7 @@ class HomePage extends StatelessWidget {
                 c.current?.artist ?? '',
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
-                style: textStyle(context),
+                style: smallTextStyle(context),
               ),
             ),
 

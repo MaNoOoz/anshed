@@ -56,6 +56,7 @@ class Song {
       'url': url,
       'artworkUrl': artworkUrl, // Add artwork URL to JSON
       'updatedAt': updatedAt?.toIso8601String(),
+      'artist': artist,
     };
   }
 
