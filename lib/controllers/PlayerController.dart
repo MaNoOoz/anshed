@@ -17,29 +17,27 @@ class PlayerController extends GetxController {
   final String prefsKey = 'downloadedSongs';
 
   // Observables
+  // Observables
   var currentSong = Rxn<Song>();
-  var _currentArt = Rxn<String>();
-  var songList = <Song>[].obs;
-  var downloadedSongs = <Song>[].obs;
+  var _allSongs = <Song>[].obs;
+  final _downloadedSongs = <Song>[].obs;
+  var _filteredSongs = <Song>[].obs;
+
   var currentIndex = 0.obs;
   var volume = 1.0.obs;
   var isLoading = false.obs;
+
 // Reactive list for filtered songs
-  RxList<Song> filteredSongs = <Song>[].obs;
 
   // Getters
-  List<Song> get songs => songList;
+  List<Song> get songs => _allSongs;
 
-  List<Song> get downloaded => downloadedSongs;
+  List<Song> get downloadedSongs => _downloadedSongs;
 
+  List<Song> get filteredSongs => _filteredSongs;
   Song? get current => currentSong.value;
-
-  String? get currentArt => _currentArt.value;
-
   int get index => currentIndex.value;
-
   double get vol => volume.value;
-
   bool get loading => isLoading.value;
 
   // Cache management
@@ -49,7 +47,7 @@ class PlayerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    Logger().e('Songs length: ${songList.length}');
+    Logger().e('Songs length: ${_allSongs.length}');
 
     Logger().e('Songs length after adding test: ${songs.length}');
 
@@ -57,7 +55,18 @@ class PlayerController extends GetxController {
     loadCachedSongs();
     fetchMusicUrls();
     _initListeners();
-    filteredSongs.assignAll(songList); // Initialize with all songs
+
+    // Combine all lists into one
+    _allSongs.value = [
+      ..._downloadedSongs,
+      ..._filteredSongs,
+      ..._downloadedSongs
+    ];
+
+    _filteredSongs = _allSongs;
+
+    _filteredSongs.clear();
+    _filteredSongs.assignAll(_allSongs); // Initialize with all songs
 
     player.setVolume(volume.value);
     ever(volume, (value) => player.setVolume(value));
@@ -68,17 +77,16 @@ class PlayerController extends GetxController {
     Logger().e('onReady : Songs length after adding test: ${songs.length}');
 
     // Additional logic after the widget is rendered
-    filteredSongs.assignAll(songList); // Initialize with all songs
-
+    _filteredSongs.assignAll(_allSongs); // Initialize with all songs
   }
 // Method to filter songs based on search query
   void filterSongs(String query) {
     if (query.isEmpty) {
       // If the query is empty, show all songs
-      filteredSongs.assignAll(songs);
+      _filteredSongs.assignAll(songs);
     } else {
       // Filter songs that contain the query (case-insensitive)
-      filteredSongs.assignAll(
+      _filteredSongs.assignAll(
         songs.where((song) => song.name.toLowerCase().contains(query.toLowerCase())).toList(),
       );
     }
@@ -86,10 +94,10 @@ class PlayerController extends GetxController {
 
   Future<void> checkfornewsongs(context) async {
     Logger().e(
-        "Pressed songList ${songList.length} and downloadedSongs ${downloadedSongs.length}");
+        "Pressed songList ${_allSongs.length} and downloadedSongs ${_downloadedSongs.length}");
     await fetchMusicUrls();
     // Check for new songs to download
-    if (songList.length > downloadedSongs.length || songList.isEmpty) {
+    if (_allSongs.length > _downloadedSongs.length || _allSongs.isEmpty) {
       showDialog(
         context: Get.context!,
         builder: (BuildContext context) {
@@ -114,7 +122,7 @@ class PlayerController extends GetxController {
           );
         },
       );
-    } else if (songList.length == downloadedSongs.length) {
+    } else if (_allSongs.length == _downloadedSongs.length) {
       showDialog(
         context: Get.context!,
         builder: (BuildContext context) {
@@ -137,14 +145,14 @@ class PlayerController extends GetxController {
 
   // for tetsing
   deleteAllSongs() {
-    songList.clear();
-    downloadedSongs.clear();
+    _allSongs.clear();
+    _downloadedSongs.clear();
     _cachedPaths.clear();
     _preloadQueue.clear();
   }
 
   deleteSong(int currentIndex) {
-    songList.removeAt(currentIndex);
+    _allSongs.removeAt(currentIndex);
     // downloadedSongs.removeAt(currentIndex);
     _cachedPaths.clear();
     _preloadQueue.clear();
@@ -171,8 +179,8 @@ class PlayerController extends GetxController {
 
         Logger().e('Loaded Cached Songs Count: ${cachedSongs.length}');
 
-        songList.value = cachedSongs;
-        downloadedSongs.value = cachedSongs;
+        _allSongs.value = cachedSongs;
+        _downloadedSongs.value = cachedSongs;
       } else {
         Logger().e('No cached songs found.');
       }
@@ -199,7 +207,7 @@ class PlayerController extends GetxController {
         Logger().e('Fetched Songs Count: ${fetchedSongs.length}');
 
         if (fetchedSongs.isNotEmpty) {
-          songList.value = fetchedSongs;
+          _allSongs.value = fetchedSongs;
         } else {
           Logger().e('No songs found.');
         }
@@ -226,14 +234,14 @@ class PlayerController extends GetxController {
   Future<void> playSong(int index) async {
     Logger().e('playSong  at $index');
 
-    if (index < 0 || index >= songList.length || isLoading.value) return;
+    if (index < 0 || index >= _allSongs.length || isLoading.value) return;
 
     try {
       isLoading.value = true;
       currentIndex.value = index;
-      currentSong.value = songList[index];
+      currentSong.value = _allSongs[index];
 
-      final song = songList[index];
+      final song = _allSongs[index];
 
       // Start loading audio source immediately
       final audioPathFuture = _getAudioPath(song.url);
@@ -262,7 +270,7 @@ class PlayerController extends GetxController {
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
             'index': index,
-            'total': songList.length,
+            'total': _allSongs.length,
           },
         );
 
@@ -273,6 +281,8 @@ class PlayerController extends GetxController {
           ),
           preload: false, // Don't preload the entire file
         );
+
+        player.stop();
 
         // Start playing immediately while preloading next song in background
         player.play();
@@ -288,7 +298,7 @@ class PlayerController extends GetxController {
           displaySubtitle: 'أناشيد الثورة السورية',
           extras: {
             'index': index,
-            'total': songList.length,
+            'total': _allSongs.length,
           },
         );
 
@@ -323,7 +333,7 @@ class PlayerController extends GetxController {
   }
 
   Future<void> nextSong() async {
-    if (currentIndex.value < songList.length - 1) {
+    if (currentIndex.value < _allSongs.length - 1) {
       await playSong(currentIndex.value + 1);
     }
   }
@@ -342,16 +352,16 @@ class PlayerController extends GetxController {
   // Download Management ======================================
 
   Future<void> downloadSong(int index) async {
-    if (index < 0 || index >= songList.length) return;
+    if (index < 0 || index >= _allSongs.length) return;
     try {
-      final song = songList[index];
-      if (downloadedSongs.any((s) => s.url == song.url)) {
+      final song = _allSongs[index];
+      if (_downloadedSongs.any((s) => s.url == song.url)) {
         showSuccessSnackbar('${song.name} متوفر بالفعل للتشغيل دون إنترنت');
         return;
       }
 
       await _downloadAndCacheFile(song.url);
-      downloadedSongs.add(song);
+      _downloadedSongs.add(song);
       // showSuccessSnackbar('تم تحميل ${song.name} للتشغيل دون إنترنت');
     } catch (e) {
       _showErrorSnackbar("حدث خطأ أثناء تحميل الأغنية");
@@ -367,12 +377,12 @@ class PlayerController extends GetxController {
     Logger().e('downloadAllSongs');
     await fetchMusicUrls();
     try {
-      for (var i = 0; i < songList.length; i++) {
-        if (!downloadedSongs.any((s) => s.url == songList[i].url)) {
+      for (var i = 0; i < _allSongs.length; i++) {
+        if (!_downloadedSongs.any((s) => s.url == _allSongs[i].url)) {
           await downloadSong(i);
         }
       }
-      if (areListsEqual(songList, downloadedSongs)) {
+      if (areListsEqual(_allSongs, _downloadedSongs)) {
         showSuccessSnackbar(' متوفر بالفعل للتشغيل دون إنترنت');
       } else {
         showSuccessSnackbar(' متوفر بالفعل للتشغيل دون إنترنت');
@@ -412,10 +422,10 @@ class PlayerController extends GetxController {
   }
 
   Future<void> _preloadNextSong(int currentIndex) async {
-    if (currentIndex >= songList.length - 1) return;
+    if (currentIndex >= _allSongs.length - 1) return;
 
     try {
-      final nextSong = songList[currentIndex + 1];
+      final nextSong = _allSongs[currentIndex + 1];
       if (!_preloadQueue.contains(nextSong.url)) {
         _preloadQueue.add(nextSong.url);
         await _getAudioPath(nextSong.url);

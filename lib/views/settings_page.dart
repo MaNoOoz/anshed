@@ -10,6 +10,7 @@ import '../adaptive_widgets/icons.dart';
 import '../adaptive_widgets/listtile.dart';
 import '../controllers/PlayerController.dart';
 import '../models/SettingItem.dart';
+import '../utils/constants.dart';
 import '../widgets/color_icon.dart';
 import '../widgets/text_styles.dart';
 import 'home_page.dart';
@@ -80,7 +81,7 @@ class SettingsScreen extends StatelessWidget {
 
 final PlayerController c = Get.find<PlayerController>();
 final Uri other_apps = Uri.parse('$other_apps');
-final Uri main_app = Uri.parse('$BASE_URL_flutter');
+final Uri main_app = Uri.parse('${Constants.BASE_URL_flutter}');
 
 Future<void> _launchUrl(Uri url) async {
   if (!await launchUrl(url)) {
@@ -109,7 +110,7 @@ List<SettingItem> settingScreenData(BuildContext context) => [
         color: Colors.accents[2],
         hasNavigation: true,
         onTap: (context) =>
-            Share.share('Check out this app: $BASE_URL_flutter'),
+            Share.share('Check out this app: ${Constants.BASE_URL_flutter}'),
       ),
       SettingItem(
           title: "تطبيقاتنا الأخرى ",

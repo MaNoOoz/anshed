@@ -2,11 +2,16 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+
 class mSeekBar extends StatefulWidget {
   final Duration duration;
   final Duration position;
   final Duration bufferedPosition;
   final ValueChanged<Duration>? onChanged;
+  final ValueChanged<Duration>? onChangeEnd;
 
   const mSeekBar({
     super.key,
@@ -14,6 +19,7 @@ class mSeekBar extends StatefulWidget {
     required this.position,
     required this.bufferedPosition,
     this.onChanged,
+    this.onChangeEnd,
   });
 
   @override
@@ -22,6 +28,7 @@ class mSeekBar extends StatefulWidget {
 
 class _mSeekBarState extends State<mSeekBar> {
   double? _dragValue;
+  bool _dragging = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,11 +65,11 @@ class _mSeekBarState extends State<mSeekBar> {
               children: [
                 Text(
                   _positionText,
-                  style: const TextStyle(),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 const Text(
                   "",
-                  style: TextStyle(),
+                  style: TextStyle(color: Colors.white),
                 ),
                 Expanded(
                   child: Slider(
@@ -75,17 +82,31 @@ class _mSeekBarState extends State<mSeekBar> {
                       setState(() {
                         _dragValue = value;
                       });
-                      if (widget.onChanged != null) {
+                      if (widget.onChanged != null && _dragging) {
                         widget
                             .onChanged!(Duration(milliseconds: value.round()));
                       }
-                      _dragValue = null;
+                    },
+                    onChangeStart: (value) {
+                      setState(() {
+                        _dragging = true;
+                      });
+                    },
+                    onChangeEnd: (value) {
+                      setState(() {
+                        _dragging = false;
+                        _dragValue = null;
+                      });
+                      if (widget.onChangeEnd != null) {
+                        widget.onChangeEnd!(
+                            Duration(milliseconds: value.round()));
+                      }
                     },
                   ),
                 ),
                 Text(
                   _durationText,
-                  style: const TextStyle(),
+                  style: const TextStyle(color: Colors.white),
                 ),
               ],
             ),

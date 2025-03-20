@@ -11,6 +11,7 @@ import '../adaptive_widgets/appbar.dart';
 import '../controllers/AdController.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
+import '../widgets/item.dart';
 import '../widgets/music_tile.dart';
 import '../widgets/text_styles.dart';
 
@@ -77,7 +78,7 @@ class HomePage extends StatelessWidget {
           );
         }
 
-        if (c.songs.isEmpty && c.downloaded.isEmpty) {
+        if (c.songs.isEmpty && c.downloadedSongs.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -111,29 +112,24 @@ class HomePage extends StatelessWidget {
                   },
                 ),
               ),
+
               Obx(() {
-                var allSongs = [
-                  ...c.filteredSongs,
-                  ...c.songList,
-                  ...c.downloadedSongs
-                ];
                 // Remove duplicates by converting to Set and then back to List
-                var uniqueSongs =
-                    allSongs.toSet().toList(); // Removing duplicates
                 return Expanded(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: uniqueSongs.length,
+                    itemCount: c.filteredSongs.length,
                     // Use filteredSongs instead of songs
                     itemBuilder: (context, index) {
                       // Get the song from the uniqueSongs list
-                      var song = uniqueSongs[index];
-                      // Find the original index in the combined list
-                      var originalIndex = allSongs.indexOf(song);
+                      var song = c.filteredSongs[index];
 
                       return MusicTile(
                         song: song,
-                        index: originalIndex,
+                        index: index,
+                        onTap: () {
+                          c.playSong(index);
+                        },
                       );
                     },
                   ),
@@ -153,6 +149,7 @@ class HomePage extends StatelessWidget {
       }),
     );
   }
+
   Widget imagePlaceHolder() {
     return CachedNetworkImage(
       imageUrl: c.current!.artworkUrl!,
@@ -191,8 +188,8 @@ class HomePage extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: mediumTextStyle(context)),
             ),
-            // SubTitle
 
+            // SubTitle
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
@@ -205,6 +202,7 @@ class HomePage extends StatelessWidget {
 
             Spacer(),
 
+            // Seek bar
             StreamBuilder<Duration>(
               stream: c.player.positionStream,
               builder: (context, snapshot) {
@@ -221,11 +219,18 @@ class HomePage extends StatelessWidget {
                       duration: duration,
                       bufferedPosition: bufferedPosition,
                       position: position,
+                      onChanged: (value) {
+                        //playerController.audioHandler.seek(value);
+                      },
+                      onChangeEnd: (value) {
+                        c.player.seek(value);
+                      },
                     );
                   },
                 );
               },
             ),
+
             Align(
               alignment: Alignment.bottomCenter,
               child: Opacity(
@@ -277,6 +282,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 10),
           ],
         ),

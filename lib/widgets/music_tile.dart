@@ -10,11 +10,13 @@ import '../models/song.dart';
 class MusicTile extends StatelessWidget {
   final Song song;
   final int index;
+  final Function() onTap;
 
   MusicTile({
     Key? key,
     required this.song,
     required this.index,
+    required this.onTap,
   }) : super(key: key);
 
   final PlayerController c = Get.find<PlayerController>();
@@ -41,48 +43,41 @@ class MusicTile extends StatelessWidget {
       return Container(
         color: isPlaying ? Color.fromRGBO(1, 72, 31, 1) : Colors.black,
         child: ListTile(
-          leading: Container(
-            height: 50,
-            width: 50,
-            child: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
-                ? imagePlaceHolder()
-                : Image.asset('assets/s.png'),
-          ),
-          title: Text(
-            song.name,
-            overflow: TextOverflow.ellipsis,
-            style: mediumTextStyle(context, bold: isPlaying ? true : false),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isDownloaded)
-                const Icon(
-                  Icons.download_done,
-                  color: Colors.green,
-                ),
-              if (!isDownloaded)
-                IconButton(
-                  icon: const Icon(
-                    Icons.download_for_offline,
-                    color: Colors.white,
+            leading: Container(
+              height: 50,
+              width: 50,
+              child: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
+                  ? imagePlaceHolder()
+                  : Image.asset('assets/s.png'),
+            ),
+            title: Text(
+              song.name,
+              overflow: TextOverflow.ellipsis,
+              style: mediumTextStyle(context, bold: isPlaying ? true : false),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isDownloaded)
+                  const Icon(
+                    Icons.download_done,
+                    color: Colors.green,
                   ),
-                  onPressed: () {
-                    Logger()
-                        .i('downloadSong song at index $index $isDownloaded');
-                    c.downloadSong(index);
-                  },
-                ),
-            ],
-          ),
-          onTap: () {
-            if (isCurrentSong) {
-              c.togglePlayPause();
-            } else {
-              c.playSong(index);
-            }
-          },
-        ),
+                if (!isDownloaded)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.download_for_offline,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Logger()
+                          .i('downloadSong song at index $index $isDownloaded');
+                      c.downloadSong(index);
+                    },
+                  ),
+              ],
+            ),
+            onTap: onTap),
       );
     });
   }
