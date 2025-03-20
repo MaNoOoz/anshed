@@ -4,9 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../adaptive_widgets/appbar.dart';
+import '../controllers/AdController.dart';
 import '../controllers/PlayerController.dart';
 import '../widgets/SeekBar.dart';
 import '../widgets/music_tile.dart';
@@ -20,6 +22,8 @@ const String other_apps =
 class HomePage extends StatelessWidget {
   HomePage({Key? key}) : super(key: key);
 
+  final AdController adController = Get.put(AdController());
+
   final PlayerController c = Get.find<PlayerController>();
   final PanelController panelController = PanelController();
   final TextEditingController searchController =
@@ -28,6 +32,12 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          adController.showInterstitialAd();
+        },
+        child: Icon(Icons.ad_units),
+      ),
       // backgroundColor: Colors.black87,
       appBar: AdaptiveAppBar(
         centerTitle: true,
@@ -116,14 +126,26 @@ class HomePage extends StatelessWidget {
                     itemCount: uniqueSongs.length,
                     // Use filteredSongs instead of songs
                     itemBuilder: (context, index) {
+                      // Get the song from the uniqueSongs list
+                      var song = uniqueSongs[index];
+                      // Find the original index in the combined list
+                      var originalIndex = allSongs.indexOf(song);
+
                       return MusicTile(
-                        song: uniqueSongs[index],
-                        index: index,
+                        song: song,
+                        index: originalIndex,
                       );
                     },
                   ),
                 );
               }),
+              Obx(() => adController.isBannerAdLoaded.value
+                  ? SizedBox(
+                height: adController.bannerAd.size.height.toDouble(),
+                width: adController.bannerAd.size.width.toDouble(),
+                child: AdWidget(ad: adController.bannerAd),
+              )
+                  : SizedBox()),
               playerWidget(context),
             ],
           ),
@@ -131,7 +153,6 @@ class HomePage extends StatelessWidget {
       }),
     );
   }
-
   Widget imagePlaceHolder() {
     return CachedNetworkImage(
       imageUrl: c.current!.artworkUrl!,

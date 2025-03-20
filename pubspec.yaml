@@ -35,6 +35,7 @@ dependencies:
   cached_network_image:
   connectivity_plus:
   just_audio_web:
+  google_mobile_ads: ^5.3.1
   flutter_spinkit:
   sliding_up_panel:
   fluent_ui: ^4.9.2

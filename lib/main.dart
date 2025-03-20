@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:anshed/views/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -12,7 +15,11 @@ import 'views/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  unawaited(MobileAds.instance.initialize());  // Add your test device ID here
+  RequestConfiguration requestConfiguration = RequestConfiguration(
+    testDeviceIds: ["387845A5FCBC0B2B29189CEAC8B80EC7"], // Replace this
+  );
+  MobileAds.instance.updateRequestConfiguration(requestConfiguration);
   // Initialize background playback
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.manoooz.anshed.audio',

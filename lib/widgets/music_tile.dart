@@ -20,6 +20,9 @@ class MusicTile extends StatelessWidget {
   final PlayerController c = Get.find<PlayerController>();
 
   Widget imagePlaceHolder() {
+    if (song.artworkUrl == null || song.artworkUrl!.isEmpty) {
+      return Image.asset('assets/s.png');
+    }
     return CachedNetworkImage(
       imageUrl: song.artworkUrl!,
       placeholder: (context, url) => Image.asset('assets/s.png'),
@@ -41,16 +44,6 @@ class MusicTile extends StatelessWidget {
           leading: Container(
             height: 50,
             width: 50,
-            // decoration: BoxDecoration(
-            //   borderRadius: BorderRadius.circular(8),
-            //   image: DecorationImage(
-            //     image: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
-            //         ? NetworkImage(song.artworkUrl.toString()??"")
-            //         : const AssetImage('assets/s.png') as ImageProvider,
-            //     fit: BoxFit.contain,
-            //   ),
-            // ),
-
             child: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
                 ? imagePlaceHolder()
                 : Image.asset('assets/s.png'),
@@ -83,8 +76,6 @@ class MusicTile extends StatelessWidget {
             ],
           ),
           onTap: () {
-            // c.deleteSong(index);
-
             if (isCurrentSong) {
               c.togglePlayPause();
             } else {
