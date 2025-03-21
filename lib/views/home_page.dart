@@ -93,41 +93,38 @@ class HomePage extends StatelessWidget {
           );
         }
 
-        return Container(
-          // color: Colors.black,
-          child: Column(
-            children: [
-              Obx(() {
-                return Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: c.songs.length,
-                    // Use filteredSongs instead of songs
-                    itemBuilder: (context, index) {
-                      // Get the song from the uniqueSongs list
-                      var song = c.songs[index];
+        return Column(
+          children: [
+            Obx(() {
+              return Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: c.songs.length,
+                  // Use filteredSongs instead of songs
+                  itemBuilder: (context, index) {
+                    // Get the song from the uniqueSongs list
+                    var song = c.songs[index];
 
-                      return MusicTile(
-                        song: song,
-                        index: index,
-                        onTap: () {
-                          c.playSong2(index);
-                        },
-                      );
-                    },
-                  ),
-                );
-              }),
-              Obx(() => adController.isBannerAdLoaded.value
-                  ? SizedBox(
-                      height: adController.bannerAd.size.height.toDouble(),
-                      width: adController.bannerAd.size.width.toDouble(),
-                      child: AdWidget(ad: adController.bannerAd),
-                    )
-                  : SizedBox()),
-              playerWidget(context),
-            ],
-          ),
+                    return MusicTile(
+                      song: song,
+                      index: index,
+                      onTap: () {
+                        c.playSong2(index);
+                      },
+                    );
+                  },
+                ),
+              );
+            }),
+            Obx(() => adController.isBannerAdLoaded.value
+                ? SizedBox(
+                    height: adController.bannerAd.size.height.toDouble(),
+                    width: adController.bannerAd.size.width.toDouble(),
+                    child: AdWidget(ad: adController.bannerAd),
+                  )
+                : SizedBox()),
+            playerWidget(context),
+          ],
         );
       }),
     );
@@ -159,7 +156,7 @@ class HomePage extends StatelessWidget {
                 ? CachedNetworkImageProvider(c.current!.artworkUrl ??
                     "assets/s.png") // Use CachedNetworkImageProvider
                 : const AssetImage('assets/s.png') as ImageProvider,
-            fit: BoxFit.contain,
+            fit: BoxFit.cover,
             filterQuality: FilterQuality.high,
           ),
         ),
@@ -263,7 +260,8 @@ class HomePage extends StatelessWidget {
                         ),
                         onPressed: () {
                           c.nextSong();
-                          adController.showInterstitialAd();
+                          // adController.showInterstitialAd();
+                          // adController.showRewardedAd();
                         },
                       ),
                       const VolumeControlScreen(),

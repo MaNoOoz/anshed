@@ -69,8 +69,9 @@ class PlayerController extends GetxController {
     Logger().e('onReady : Songs length after adding test: ${songs.length}');
 
     songs.assignAll(_allSongs); // Initialize with all songs
-    songs.sort((a, b) =>
-        b.updatedAt.toString().compareTo(a.updatedAt.toString())); // Sort
+
+    songs.sort(
+        (a, b) => b.artist.toString().compareTo(a.artist.toString())); // Sort
   }
 
   Future<void> checkfornewsongs(context) async {
@@ -175,8 +176,9 @@ class PlayerController extends GetxController {
     try {
       isLoading.value = true;
       final query = QueryBuilder<ParseObject>(ParseObject('Song'))
-        ..orderByDescending('updatedAt');
-
+        // ..whereEqualTo("type", "nasheed");
+        ..orderByDescending('type');
+      //
       final response = await query.query();
       Logger().e('Response received: ${response.results}');
 
