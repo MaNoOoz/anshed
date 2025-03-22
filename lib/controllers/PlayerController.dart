@@ -214,7 +214,7 @@ class PlayerController extends GetxController {
     }
   }
 
-  Future<void> playSong(int index) async {
+  Future<void> playSong2(int index) async {
     Logger().e('playSong  at $index');
 
     if (index < 0 || index >= _allSongs.length || isLoading.value) return;
@@ -304,7 +304,7 @@ class PlayerController extends GetxController {
     }
   }
 
-  Future<void> playSong2(int index) async {
+  Future<void> playSong(int index) async {
     Logger().e('playSong at $index');
 
     if (index < 0 || index >= _allSongs.length || isLoading.value) return;
@@ -395,7 +395,8 @@ class PlayerController extends GetxController {
       id: song.url,
       album: 'أناشيد الثورة السورية',
       title: song.name,
-      artUri: artworkUri ?? Uri.parse('assets/s.png'),
+      // artUri: artworkUri ?? Uri.parse('assets/s.png'),
+      artUri: artworkUri,
       artist: song.artist,
       displayTitle: song.name,
       displaySubtitle: 'أناشيد الثورة السورية',

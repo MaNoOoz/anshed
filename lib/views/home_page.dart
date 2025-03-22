@@ -109,7 +109,7 @@ class HomePage extends StatelessWidget {
                       song: song,
                       index: index,
                       onTap: () {
-                        c.playSong2(index);
+                        c.playSong(index);
                       },
                     );
                   },
@@ -156,7 +156,7 @@ class HomePage extends StatelessWidget {
                 ? CachedNetworkImageProvider(c.current!.artworkUrl ??
                     "assets/s.png") // Use CachedNetworkImageProvider
                 : const AssetImage('assets/s.png') as ImageProvider,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
         ),
