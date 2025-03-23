@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:anshed/controllers/AdController.dart';
 import 'package:anshed/views/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,7 +9,6 @@ import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 import 'controllers/PlayerController.dart';
-import 'controllers/SessionManager.dart';
 import 'controllers/SettingsController.dart';
 import 'views/home_page.dart';
 
@@ -48,6 +48,7 @@ Future<void> main() async {
 
   await Parse().initialize(appId, parseServerUrl, clientKey: clientKey);
   Get.put(PlayerController()); // Or Get.lazyPut(() => PlayerController());
+  Get.put(AdController()); // Or Get.lazyPut(() => PlayerController());
 
   runApp(MyApp());
 }
@@ -59,10 +60,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize SessionManager
-    final sessionManager = Get.put(SessionManager());
-    sessionManager.loadInterstitialAd();
-
     return GetMaterialApp(
         getPages: [
           GetPage(name: '/Settings', page: () => SettingsScreen()),

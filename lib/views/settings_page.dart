@@ -78,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
 }
 
 final PlayerController c = Get.find<PlayerController>();
-final Uri other_apps = Uri.parse('$other_apps');
+final Uri other_apps = Uri.parse('${Constants.OtherApps}');
 final Uri main_app = Uri.parse('${Constants.BASE_URL_flutter}');
 final Uri delete_ads = Uri.parse('${Constants.delete_ads}');
 
@@ -90,14 +90,12 @@ Future<void> _launchUrl(Uri url) async {
 
 List<SettingItem> settingScreenData(BuildContext context) => [
       SettingItem(
-        title: "حذف الإعلانات      ",
+        title: "حذف الإعلانات ",
         icon: Icons.payment_sharp,
         color: Colors.accents[5],
         hasNavigation: true,
         onTap: (context) async {
-          // _launchUrl(delete_ads);
-          // todo
-          c.deleteAllSongs();
+          _launchUrl(delete_ads);
         },
       ),
       SettingItem(
@@ -112,7 +110,7 @@ List<SettingItem> settingScreenData(BuildContext context) => [
         icon: CupertinoIcons.music_note_list,
         color: Colors.accents[1],
         hasNavigation: true,
-        onTap: (context) async => await c.checkfornewsongs(context),
+        onTap: (context) => c.update(),
       ),
       SettingItem(
         title: "مشاركة التطبيق",
@@ -128,15 +126,6 @@ List<SettingItem> settingScreenData(BuildContext context) => [
           color: Colors.accents[3],
           hasNavigation: true,
           onTap: (context) => _launchUrl(other_apps)),
-      SettingItem(
-        title: "حول المطور",
-        icon: Icons.info_rounded,
-        color: Colors.accents[4],
-        hasNavigation: true,
-        onTap: (context) async {
-          _launchUrl(other_apps);
-        },
-      ),
       SettingItem(
         title: "تحديث التطبيق",
         icon: Icons.update_outlined,

@@ -17,7 +17,7 @@ class VolumeSlider extends StatelessWidget {
         children: [
           Obx(() => Slider(
                 activeColor: Color.fromRGBO(0, 77, 31, 1),
-                value: controller.volume.value,
+                value: controller.volume,
                 onChanged: controller.setVolume,
                 min: 0,
                 max: 1,
@@ -58,7 +58,7 @@ class VolumeControlScreen extends StatelessWidget {
     return PopupMenuButton(
       icon: const Icon(
         Icons.volume_up_rounded,
-        size: 40,
+        size: 22,
         color: Colors.white,
       ),
       itemBuilder: (context) => [

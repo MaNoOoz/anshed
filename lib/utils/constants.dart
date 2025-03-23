@@ -6,7 +6,7 @@ class Constants {
 
   static String BASE_URL_flutter =
       "https://play.google.com/store/apps/details?id=com.manoooz.anshed";
-  static String other_apps =
+  static String OtherApps =
       "https://play.google.com/store/apps/dev?id=8389389659889758696";
   static String delete_ads =
       "https://play.google.com/store/apps/details?id=com.manoooz.anshed.paid";
