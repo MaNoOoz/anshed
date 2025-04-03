@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:logger/logger.dart';
+
+import '../controllers/PlayerController.dart';
+import 'VolDialoag.dart';
 
 class ControlButtons extends StatelessWidget {
   final AudioPlayer player;
+  final AudioPlayerController c = Get.find<AudioPlayerController>();
 
-  const ControlButtons(this.player, {Key? key}) : super(key: key);
+  ControlButtons(this.player, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -64,14 +70,18 @@ class ControlButtons extends StatelessWidget {
           StreamBuilder<SequenceState?>(
             stream: player.sequenceStateStream,
             builder: (context, snapshot) => IconButton(
-              splashColor: Colors.white,
-              iconSize: 44.0,
-              icon: const Icon(
-                Icons.skip_next_rounded,
-                color: Colors.white,
-              ),
-              onPressed: player.hasPrevious ? player.seekToPrevious : null,
-            ),
+                splashColor: Colors.white,
+                iconSize: 44.0,
+                icon: const Icon(
+                  Icons.skip_next_rounded,
+                  color: Colors.white,
+                ),
+                onPressed: () async {
+                  Logger().d("player.hasPrevious : ${player.hasPrevious}");
+
+                  player.hasPrevious ? await player.seekToPrevious() : null;
+                  c.update();
+                }),
           ),
           StreamBuilder<PlayerState>(
             stream: player.playerStateStream,
@@ -112,13 +122,20 @@ class ControlButtons extends StatelessWidget {
           StreamBuilder<SequenceState?>(
             stream: player.sequenceStateStream,
             builder: (context, snapshot) => IconButton(
-              icon: const Icon(Icons.skip_previous_rounded),
-              iconSize: 44.0,
-              splashColor: Colors.white,
-              color: Colors.white,
-              onPressed: player.hasNext ? player.seekToNext : null,
-            ),
+                icon: const Icon(Icons.skip_previous_rounded),
+                iconSize: 44.0,
+                splashColor: Colors.white,
+                color: Colors.white,
+                onPressed: () async {
+                  Logger().d("player.hasNext : ${player.hasNext}");
+                  player.hasNext
+                      ? await player.seekToNext()
+                      : player.seek(Duration.zero, index: 0);
+                  c.update();
+                }),
           ),
+          VolumeControlScreen()
+
           // const VolumeControlScreen(),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:logger/logger.dart';
 
 import '../models/song.dart';
 import '../widgets/PlayerModal.dart';
@@ -14,6 +15,12 @@ class AudioPlayerController extends GetxController {
   // Properties
   final RxInt currentIndex = (-1).obs; // -1 means no song selected
   final RxBool hasInitializedPlaylist = false.obs;
+  final RxDouble _volume = 1.0.obs; // Range: 0.0 (mute) to 1.0 (max)
+  final RxDouble _lastVolumeBeforeMute = 1.0.obs;
+
+  double get volume => _volume.value;
+
+  bool get isMuted => _volume.value == 0.0;
 
   // Getter for current playlist index
   int? get currentPlaylistIndex =>
@@ -69,10 +76,18 @@ class AudioPlayerController extends GetxController {
   }
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
     _initializeAudioPlayer();
-    loadInitialPlaylist();
+    await loadInitialPlaylist();
+    // Initialize player volume
+    audioPlayer.setVolume(_volume.value);
+  }
+
+  void setVolume(double value) {
+    final clampedValue = value.clamp(0.0, 1.0);
+    _volume.value = clampedValue;
+    audioPlayer.setVolume(clampedValue);
   }
 
   // Initialize the audio player by listening to state streams
@@ -90,6 +105,11 @@ class AudioPlayerController extends GetxController {
             (_audioSources[index] as UriAudioSource).tag as MediaItem;
       }
     });
+
+    // Listen for external volume changes (optional)
+    audioPlayer.volumeStream.listen((value) {
+      _volume.value = value;
+    });
   }
 
   Future<bool> isSongCached(String fileId) async {
@@ -99,10 +119,15 @@ class AudioPlayerController extends GetxController {
   // Load the initial playlist (only once)
   Future<void> loadInitialPlaylist() async {
     if (hasInitializedPlaylist.value) return; // Prevent unnecessary reload
+    final songs = await _songService.fetchSongs();
+    Logger().e('songs $songs');
 
     try {
       loadingState.value = LoadingState.loading;
       final songs = await _songService.fetchSongs();
+      Logger().e('songs $songs');
+
+      _playlist.value.clear();
       await _cacheSongs(songs);
       _playlist.value = songs;
       await _createAudioSources();
@@ -111,6 +136,7 @@ class AudioPlayerController extends GetxController {
       update();
     } catch (e) {
       loadingState.value = LoadingState.error;
+      Logger().e('Error loading playlist: $e');
       Get.snackbar('Error', 'Failed to load playlist: ${e.toString()}');
       update();
     }
@@ -166,9 +192,9 @@ class AudioPlayerController extends GetxController {
 
   // Play a specific song in the playlist
   Future<void> playSong(int index) async {
-    if (index >= 0 && index < _playlist.value.length) {
-      await playPlaylist(_playlist.value, index);
-    }
+    // if (index >= 0 && index < _playlist.value.length) {
+    await playPlaylist(_playlist.value, index);
+    // }
     update();
   }
 
