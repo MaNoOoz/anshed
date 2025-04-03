@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
-import 'VolDialoag.dart';
-
 class ControlButtons extends StatelessWidget {
   final AudioPlayer player;
 
@@ -121,7 +119,7 @@ class ControlButtons extends StatelessWidget {
               onPressed: player.hasNext ? player.seekToNext : null,
             ),
           ),
-          const VolumeControlScreen(),
+          // const VolumeControlScreen(),
         ],
       ),
     );

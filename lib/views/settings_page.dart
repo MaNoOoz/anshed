@@ -1,13 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../adaptive_widgets/appbar.dart';
 import '../adaptive_widgets/icons.dart';
 import '../adaptive_widgets/listtile.dart';
-import '../controllers/PlayerController.dart';
 import '../models/SettingItem.dart';
 import '../utils/constants.dart';
 import '../widgets/color_icon.dart';
@@ -77,7 +75,7 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-final PlayerController c = Get.find<PlayerController>();
+// final PlayerController c = Get.find<PlayerController>();
 final Uri other_apps = Uri.parse('${Constants.OtherApps}');
 final Uri main_app = Uri.parse('${Constants.BASE_URL_flutter}');
 final Uri delete_ads = Uri.parse('${Constants.delete_ads}');
@@ -103,14 +101,14 @@ List<SettingItem> settingScreenData(BuildContext context) => [
         icon: Icons.download_rounded,
         color: Colors.accents[0],
         hasNavigation: true,
-        onTap: (context) => c.downloadAllSongs(),
+        // onTap: (context) => c.downloadAllSongs(),
       ),
       SettingItem(
         title: "تحديث الأناشيد",
         icon: CupertinoIcons.music_note_list,
         color: Colors.accents[1],
         hasNavigation: true,
-        onTap: (context) => c.update(),
+        // onTap: (context) => c.update(),
       ),
       SettingItem(
         title: "مشاركة التطبيق",

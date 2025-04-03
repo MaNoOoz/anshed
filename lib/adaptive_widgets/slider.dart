@@ -12,6 +12,7 @@ class AdaptiveSlider extends StatelessWidget {
   final String? label;
   final bool vertical;
   final void Function(double)? onChanged;
+
   const AdaptiveSlider(
       {required this.value,
       this.disabled = false,

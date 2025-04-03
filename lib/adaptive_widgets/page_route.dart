@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent_ui;
+import 'package:flutter/cupertino.dart';
 
 class AdaptivePageRoute<T> extends PageRoute<T> {
   final WidgetBuilder builder;

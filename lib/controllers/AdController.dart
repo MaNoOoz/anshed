@@ -220,5 +220,4 @@ class AdController extends GetxController with WidgetsBindingObserver {
       throw UnsupportedError('Unsupported platform');
     }
   }
-
 }

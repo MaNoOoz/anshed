@@ -7,6 +7,7 @@ class ColorIcon extends StatelessWidget {
     required this.color,
     super.key,
   });
+
   final IconData icon;
   final Color? color;
 

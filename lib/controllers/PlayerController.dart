@@ -1,303 +1,256 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:logger/logger.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 import '../models/song.dart';
+import '../widgets/PlayerModal.dart';
+import 'SongCacheManager.dart';
+import 'SongService.dart';
 
-class PlayerController extends GetxController {
-  final AudioPlayer _player = AudioPlayer();
-  final DefaultCacheManager _cacheManager = DefaultCacheManager();
-  final Map<String, String> _cachedPaths = <String, String>{};
-  final RxInt _downloadProgress = 0.obs;
-  ConcatenatingAudioSource _playlist = ConcatenatingAudioSource(children: []);
+enum LoadingState { idle, loading, success, error }
 
-  final String _jsonCacheKey = 'cachedSongs';
+class AudioPlayerController extends GetxController {
+  // Properties
+  final RxInt currentIndex = (-1).obs; // -1 means no song selected
+  final RxBool hasInitializedPlaylist = false.obs;
 
-  // Observables
-  final RxList<Song> _allSongs = <Song>[].obs;
-  final Rx<Song?> _currentSong = Rx<Song?>(null);
-  final RxInt _currentIndex = 0.obs; // Changed initial value to 0
-  final RxDouble _volume = 1.0.obs;
-  final RxBool _isLoading = false.obs;
-  final Rx<PlayerState> _playerState =
-      Rx(PlayerState(false, ProcessingState.idle));
+  // Getter for current playlist index
+  int? get currentPlaylistIndex =>
+      currentIndex.value >= 0 ? currentIndex.value : null;
+
+  final Rx<LoopMode> loopMode = LoopMode.off.obs;
+  final RxBool shuffleMode = false.obs;
+  final AudioPlayer audioPlayer = AudioPlayer();
+  final SongService _songService = SongService();
+  final SongCacheManager _songCacheManager = SongCacheManager();
+
+  final Rx<List<Song>> _playlist = Rx<List<Song>>([]);
+  final Rx<LoadingState> loadingState = Rx<LoadingState>(LoadingState.idle);
+  final List<AudioSource> _audioSources = [];
+  final Rx<MediaItem?> currentMediaItem = Rx<MediaItem?>(MediaItem(
+    id: '',
+    title: '',
+    artist: '',
+    album: '',
+    genre: '',
+    artUri: Uri.parse('assets/s.png'),
+  ));
 
   // Getters
-  AudioPlayer get player => _player;
+  List<Song> get playlist => _playlist.value;
 
-  List<Song> get songs => _allSongs;
+  bool get isPlaying => audioPlayer.playing;
 
-  Song? get currentSong =>
-      _currentIndex.value >= 0 && _currentIndex.value < _allSongs.length
-          ? _allSongs[_currentIndex.value]
-          : null; //derived from the current index
-  int get currentIndex => _currentIndex.value;
+  bool get hasNext => audioPlayer.hasNext;
 
-  double get volume => _volume.value;
+  bool get hasPrevious => audioPlayer.hasPrevious;
 
-  bool get isLoading => _isLoading.value;
-  RxBool _shuffleModeEnabled = false.obs;
+  List<MediaItem> get mediaItems =>
+      _playlist.value.map((song) => song.toMediaItem()).toList();
 
-  bool get shuffleMode => _shuffleModeEnabled.value;
+  // Toggle shuffle mode
+  void toggleShuffle() {
+    shuffleMode.toggle();
+    audioPlayer.setShuffleModeEnabled(shuffleMode.value);
+    update();
+  }
 
-  PlayerState get playerState => _playerState.value;
-
-  double get vol => _volume.value;
-
-  String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = duration.inHours;
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-
-    return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+  // Toggle loop mode using Dart's switch expression
+  void toggleLoopMode() {
+    final newMode = switch (loopMode.value) {
+      LoopMode.off => LoopMode.one,
+      LoopMode.one => LoopMode.all,
+      LoopMode.all => LoopMode.off,
+    };
+    loopMode.value = newMode;
+    audioPlayer.setLoopMode(newMode);
+    update();
   }
 
   @override
   void onInit() {
     super.onInit();
-    _initPlayer();
-    _loadCachedSongs();
-    _fetchMusicUrls();
+    _initializeAudioPlayer();
+    loadInitialPlaylist();
   }
 
-  void _initPlayer() {
-    _player.setVolume(_volume.value);
-    _volume.listen((v) => _player.setVolume(v));
-
-    _player.playerStateStream.listen((state) {
-      _playerState.value = state;
+  // Initialize the audio player by listening to state streams
+  void _initializeAudioPlayer() {
+    audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        _handlePlaybackCompletion();
+      }
     });
 
-    _listenToShuffle();
-
-    _player.currentIndexStream.listen((index) {
-      if (index != null && index >= 0 && index < _allSongs.length) {
-        _currentIndex.value = index;
-        _currentSong.value = _allSongs[index];
+    audioPlayer.currentIndexStream.listen((index) {
+      currentIndex.value = index ?? -1;
+      if (index != null && index < _audioSources.length) {
+        currentMediaItem.value =
+            (_audioSources[index] as UriAudioSource).tag as MediaItem;
       }
     });
   }
 
-  void _listenToShuffle() {
-    _player.shuffleModeEnabledStream.listen((data) {
-      _shuffleModeEnabled = data.obs;
-    });
+  Future<bool> isSongCached(String fileId) async {
+    return await _songCacheManager.isSongCached(fileId);
   }
 
-  void setVolume(double newVolume) {
-    _volume.value = newVolume;
-    _player.setVolume(newVolume);
-  }
-
-  void setShuffleMode(bool on) {
-    _shuffleModeEnabled.value = on;
-    _player.setShuffleModeEnabled(on);
-  }
-
-  Future<void> nextSong() async {
-    if (_currentIndex.value < _allSongs.length - 1) {
-      await playSong(_currentIndex.value + 1);
-    }
-  }
-
-  Future<void> playSong(int index) async {
-    if (index < 0 || index >= _allSongs.length) return;
+  // Load the initial playlist (only once)
+  Future<void> loadInitialPlaylist() async {
+    if (hasInitializedPlaylist.value) return; // Prevent unnecessary reload
 
     try {
-      // Update the current index and current song
-      _currentIndex.value = index;
-      _currentSong.value = _allSongs[index];
-      await _player.seek(Duration.zero, index: index);
-      await _player.play();
+      loadingState.value = LoadingState.loading;
+      final songs = await _songService.fetchSongs();
+      await _cacheSongs(songs);
+      _playlist.value = songs;
+      await _createAudioSources();
+      loadingState.value = LoadingState.success;
+      hasInitializedPlaylist.value = true;
+      update();
     } catch (e) {
-      _handlePlaybackError(e);
+      loadingState.value = LoadingState.error;
+      Get.snackbar('Error', 'Failed to load playlist: ${e.toString()}');
+      update();
     }
   }
 
-  void _handlePlaybackError(dynamic e) {
-    if (e is SocketException) {
-      // _showErrorSnackbar("تحقق من اتصال الإنترنت");
-    } else {
-      // _showErrorSnackbar("فشل التشغيل");
-    }
-    Logger().e('Playback error: $e');
+  // Cache songs if not already cached
+  Future<void> _cacheSongs(List<Song> songs) async {
+    await Future.wait(songs.map((song) async {
+      if (!await _songCacheManager.isSongCached(song.fileId)) {
+        await _songCacheManager.downloadAndCacheSong(song.fileId);
+      }
+    }));
   }
 
-  Future<void> seekToPosition(Duration position) async {
-    try {
-      await player.seek(position);
-    } catch (e) {
-      // _showErrorSnackbar("فشل التحديد");
-      Logger().e('Seek error: $e');
-    }
-  }
-
-  Future<void> previousSong() async {
-    if (_currentIndex.value > 0) {
-      await playSong(_currentIndex.value - 1);
-    }
-  }
-
-  Future<void> _loadCachedSongs() async {
-    try {
-      final file = await _cacheManager.getFileFromCache(_jsonCacheKey);
+  // Create audio sources for the player
+  Future<void> _createAudioSources() async {
+    _audioSources.clear();
+    for (final song in _playlist.value) {
+      final file = await _songCacheManager.getCachedSong(song.fileId);
       if (file != null) {
-        final jsonString = await file.file.readAsString();
-        _allSongs.value = (jsonDecode(jsonString) as List)
-            .map((e) => Song.fromJson(e))
-            .toList();
-      }
-    } catch (e) {
-      Logger().e('Error loading cached songs: $e');
-    }
-  }
-
-  Future<void> _fetchMusicUrls() async {
-    try {
-      _isLoading.value = true;
-      final query = QueryBuilder<ParseObject>(ParseObject('Song'))
-        ..orderByDescending('type');
-      final response = await query.query();
-
-      if (response.success && response.results != null) {
-        final fetchedSongs = response.results!
-            .map((result) => Song.fromParseObject(result as ParseObject))
-            .toList();
-
-        _allSongs.value = fetchedSongs;
-        await _updatePlaylist();
-        await _cacheManager.putFile(
-          _jsonCacheKey,
-          utf8.encode(jsonEncode(fetchedSongs.map((s) => s.toJson()).toList())),
-        );
-      }
-    } catch (e) {
-      // _showErrorSnackbar("Failed to load songs");
-      Logger().e('Fetch error: $e');
-    } finally {
-      _isLoading.value = false;
-    }
-  }
-
-  Future<void> _updatePlaylist() async {
-    try {
-      _playlist = ConcatenatingAudioSource(children: []);
-
-      for (final song in _allSongs) {
-        final cachedPath = await _getCachedPath(song.url);
-        final artworkUri = await _cacheArtwork(song.artworkUrl);
-
-        _playlist.add(AudioSource.uri(
-          Uri.parse(cachedPath ?? song.url),
-          tag: MediaItem(
-            id: song.url,
-            title: song.name,
-            artist: song.artist,
-            artUri: artworkUri,
-            extras: {'songData': song.toJson()},
-          ),
+        _audioSources.add(AudioSource.uri(
+          Uri.file(file.file.path),
+          tag: song.toMediaItem(),
         ));
       }
-
-      await _player.setAudioSource(_playlist);
-      //update current song if all song changed
-      if (_currentIndex.value < _allSongs.length)
-        _currentSong.value = _allSongs[_currentIndex.value];
-    } catch (e) {
-      Logger().e('Playlist error: $e');
-      // _showErrorSnackbar("Playlist initialization failed");
     }
+    await audioPlayer.setAudioSource(
+      ConcatenatingAudioSource(children: _audioSources),
+      preload: true,
+    );
   }
 
-  bool isSongCached(String url) {
-    return _cachedPaths.containsKey(url);
-  }
-
-  Future<String?> _getCachedPath(String url) async {
+  // Play the given playlist starting at the specified index
+  Future<void> playPlaylist(List<Song> songs, int startIndex) async {
     try {
-      final file = await _cacheManager.getFileFromCache(url);
-      return file?.file.path;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<Uri?> _cacheArtwork(String? url) async {
-    if (url == null) return null;
-
-    try {
-      final file = await _cacheManager.getSingleFile(url);
-      return Uri.file(file.path);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> downloadSong(int index) async {
-    if (index < 0 || index >= _allSongs.length) return;
-
-    try {
-      final song = _allSongs[index];
-      await _downloadAndCacheFile(song.url);
-      update();
-      _showSuccessSnackbar("تم تحميل ${song.name}");
-    } catch (e) {
-      _showErrorSnackbar("فشل التحميل");
-      Logger().e('Download error: $e');
-    }
-  }
-
-  Future<String> _downloadAndCacheFile(String url) async {
-    try {
-      final file = await _cacheManager.getSingleFile(url);
-      _cachedPaths[url] = file.path;
-      return file.path;
-    } catch (e) {
-      Logger().e('Download error: $e');
-      rethrow;
-    }
-  }
-
-  void _showErrorSnackbar(String message) {
-    Get.snackbar('Error', message, backgroundColor: Colors.red);
-  }
-
-  Future<void> downloadAllSongs() async {
-    if (_allSongs.isEmpty) {
-      _showErrorSnackbar("لا توجد أناشيد للتحميل");
-      return;
-    }
-
-    try {
-      _downloadProgress.value = 0;
-      final totalSongs = _allSongs.length;
-
-      for (var i = 0; i < totalSongs; i++) {
-        if (!_cachedPaths.containsKey(_allSongs[i].url)) {
-          await downloadSong(i);
-        }
-        _downloadProgress.value = ((i + 1) / totalSongs * 100).round();
+      if (!hasInitializedPlaylist.value) {
+        await loadInitialPlaylist();
+      }
+      if (startIndex < 0 || startIndex >= _audioSources.length) {
+        throw Exception('Invalid start index: $startIndex');
       }
 
-      _showSuccessSnackbar("تم تحميل جميع الأناشيد بنجاح");
+      currentIndex.value = startIndex; // Update current index
+      await audioPlayer.seek(Duration.zero, index: startIndex);
+      currentMediaItem.value =
+          (_audioSources[startIndex] as UriAudioSource).tag as MediaItem;
+      await play();
+      update();
     } catch (e) {
-      _showErrorSnackbar("فشل تحميل بعض الأناشيد");
-      Logger().e('Download all error: $e');
-    } finally {
-      _downloadProgress.value = 0;
+      Get.snackbar('Error', 'Failed to play: ${e.toString()}');
     }
   }
 
-  void _showSuccessSnackbar(String message) {
-    Get.snackbar('Success', message, backgroundColor: Colors.green);
+  // Play a specific song in the playlist
+  Future<void> playSong(int index) async {
+    if (index >= 0 && index < _playlist.value.length) {
+      await playPlaylist(_playlist.value, index);
+    }
+    update();
   }
+
+  // Start playing the current audio
+  Future<void> play() async {
+    try {
+      await audioPlayer.play();
+      update();
+    } catch (e) {
+      Get.snackbar('Error', 'Play failed: ${e.toString()}');
+    }
+  }
+
+  // Pause playback
+  Future<void> pause() async {
+    try {
+      await audioPlayer.pause();
+      update();
+    } catch (e) {
+      Get.snackbar('Error', 'Pause failed: ${e.toString()}');
+    }
+  }
+
+  // Seek to a specific position in the current track
+  Future<void> seek(Duration position) async {
+    try {
+      await audioPlayer.seek(position);
+      update();
+    } catch (e) {
+      Get.snackbar('Error', 'Seek failed: ${e.toString()}');
+    }
+  }
+
+  // Show the player modal if not already open
+  void showPlayerModal() {
+    if (!(Get.isBottomSheetOpen ?? false)) {
+      Get.bottomSheet(
+        SafeArea(child: PlayerModal()),
+        backgroundColor: Colors.transparent,
+        isDismissible: true,
+      );
+    }
+  }
+
+  // Skip to the previous track
+  Future<void> skipToPrevious() async {
+    try {
+      if (hasPrevious) await audioPlayer.seekToPrevious();
+      update();
+    } catch (e) {
+      Get.snackbar('Error', 'Skip failed: ${e.toString()}');
+    }
+  }
+
+  // Skip to the next track
+  Future<void> skipToNext() async {
+    try {
+      if (hasNext) await audioPlayer.seekToNext();
+      update();
+    } catch (e) {
+      Get.snackbar('Error', 'Skip failed: ${e.toString()}');
+    }
+  }
+
+  // Handle playback completion by moving to the next track or pausing playback
+  void _handlePlaybackCompletion() {
+    if (hasNext) {
+      audioPlayer.seekToNext();
+    } else {
+      pause();
+    }
+    update();
+  }
+
+  @override
+  void onClose() {
+    audioPlayer.dispose();
+    super.onClose();
+  }
+
+  // Expose streams for position and player state
+  Stream<Duration> get positionStream => audioPlayer.positionStream;
+
+  Stream<PlayerState> get playerStateStream => audioPlayer.playerStateStream;
 }

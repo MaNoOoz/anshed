@@ -1,73 +1,98 @@
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 class Song {
-  String url;
-  String name;
-  String? artist;
-  String? artworkUrl; // Optional artwork URL
-  DateTime? createdAt;
-  DateTime? updatedAt;
+  final String title;
+  final String artist;
+  final String fileId;
+  final int? duration; // in milliseconds
+  final String? album;
+  final String? artUrl;
+  final String? genre;
+  final int? trackNumber;
 
-  Song({
-    required this.url,
-    required this.name,
-    this.artist,
-    this.artworkUrl,
-    this.createdAt,
-    this.updatedAt,
+  const Song({
+    required this.title,
+    required this.artist,
+    required this.fileId,
+    this.duration,
+    this.album,
+    this.artUrl,
+    this.genre,
+    this.trackNumber,
   });
-
-  factory Song.fromParseObject(ParseObject obj) {
-    // ParseFile for URL
-    ParseFile? file = obj.get<ParseFile>('url');
-    // Extract the url from the nested object
-    String songUrl = '';
-    if (file != null) {
-      songUrl = file.url ?? '';
-    } else {
-      // Handle the case where 'url' is a nested object
-      final urlObject = obj.get<Map<String, dynamic>>('url');
-      if (urlObject != null && urlObject.containsKey('url')) {
-        songUrl = urlObject['url'] as String;
-      }
-    }
-
-    return Song(
-      url: songUrl,
-      name: obj.get<String>('Name') ?? '',
-      artist: obj.get<String>('artist'),
-      artworkUrl: obj.get<String>('artworkUrl'), // Get artwork URL if exists
-      createdAt: obj.get<DateTime>('createdAt'),
-      updatedAt: obj.get<DateTime>('updatedAt'),
-    );
-  }
 
   factory Song.fromJson(Map<String, dynamic> json) {
     return Song(
-      name: json['name'],
-      url: json['url'],
-      updatedAt: DateTime.parse(json['updatedAt']),
+      title: json['title']?.toString() ?? 'Unknown Title',
+      artist: json['artist']?.toString() ?? 'Unknown Artist',
+      fileId: json['file_id']?.toString() ?? '',
+      duration: _parseDuration(json['duration']),
+      album: json['album']?.toString(),
+      artUrl: json['art_url']?.toString(),
+      genre: json['genre']?.toString(),
+      trackNumber: _parseTrackNumber(json['track_number']),
     );
+  }
+
+  static int? _parseDuration(dynamic duration) {
+    if (duration == null) return null;
+    if (duration is int) return duration;
+    if (duration is String) return int.tryParse(duration);
+    return null;
+  }
+
+  static int? _parseTrackNumber(dynamic trackNumber) {
+    if (trackNumber == null) return null;
+    if (trackNumber is int) return trackNumber;
+    if (trackNumber is String) return int.tryParse(trackNumber);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'url': url,
-      'artworkUrl': artworkUrl, // Add artwork URL to JSON
-      'updatedAt': updatedAt?.toIso8601String(),
+      'title': title,
       'artist': artist,
+      'file_id': fileId,
+      'duration': duration,
+      'album': album,
+      'art_url': artUrl,
+      'genre': genre,
+      'track_number': trackNumber,
     };
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Song &&
-        other.url == url &&  // Compare based on url
-        other.name == name;  // Optionally include name for more specific comparison
+  String get downloadUrl =>
+      "https://drive.google.com/uc?export=download&id=$fileId";
+
+  Duration get durationAsDuration =>
+      duration != null ? Duration(milliseconds: duration!) : Duration.zero;
+
+  MediaItem toMediaItem() {
+    return MediaItem(
+      id: fileId,
+      title: title,
+      artist: artist,
+      album: album,
+      genre: genre,
+      artUri: artUrl != null ? Uri.tryParse(artUrl!) : null,
+      duration: durationAsDuration,
+      // trackNumber: trackNumber,
+    );
   }
 
   @override
-  int get hashCode => url.hashCode ^ name.hashCode; // Unique hash based on url and name
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Song &&
+          runtimeType == other.runtimeType &&
+          fileId == other.fileId;
+
+  @override
+  int get hashCode => fileId.hashCode;
+
+  @override
+  String toString() {
+    return 'Song{title: $title, artist: $artist, fileId: $fileId}';
+  }
 }

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent_ui;
+import 'package:flutter/material.dart';
 
 class AdaptiveTheme {
   static ThemeData getMaterialTheme(BuildContext context) {
@@ -33,6 +33,7 @@ class AdaptiveTheme {
 class AdaptiveThemeData {
   Color primaryColor;
   Color inactiveBackgroundColor;
+
   AdaptiveThemeData(
       {required this.primaryColor, required this.inactiveBackgroundColor});
 }

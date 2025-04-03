@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 final defaultFontStyle = GoogleFonts.poppins();
 final arDefaultFontStyle = GoogleFonts.notoSansArabic();
 final ar2DefaultFontStyle = GoogleFonts.ibmPlexSansArabic();
+
 TextStyle bigTextStyle(BuildContext context,
     {double opacity = 1, bool bold = true}) {
   return ar2DefaultFontStyle.copyWith(

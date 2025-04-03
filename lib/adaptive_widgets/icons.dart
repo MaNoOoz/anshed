@@ -79,6 +79,7 @@ abstract final class AdaptiveIcons {
   static IconData delete = (Platform.isWindows || Platform.isLinux)
       ? FluentIcons.delete
       : Icons.delete;
+
   static IconData volume(range) {
     if (range == 0) {
       return (Platform.isWindows || Platform.isLinux)

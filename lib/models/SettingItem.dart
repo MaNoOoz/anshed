@@ -9,6 +9,7 @@ class SettingItem {
   Function(BuildContext context)? onTap;
   Function(BuildContext context)? trailing;
   Function(BuildContext context)? subtitle;
+
   SettingItem({
     required this.title,
     this.icon,

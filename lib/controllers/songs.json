@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Bohemian Rhapsody",
+    "artist": "Queen",
+    "file_id": "1sU6t0",
+    "duration": 354000,
+    "album": "A Night at the Opera",
+    "art_url": "https://example.com/queen_album.jpg",
+    "genre": "Rock",
+    "track_number": 1
+  },
+  {
+    "title": "Shape of You",
+    "artist": "Ed Sheeran",
+    "file_id": "2jU4v1",
+    "duration": 233000,
+    "album": "÷ (Divide)",
+    "art_url": "https://example.com/divide_album.jpg",
+    "genre": "Pop",
+    "track_number": 3
+  },
+  {
+    "title": "Blinding Lights",
+    "artist": "The Weeknd",
+    "file_id": "3kU5w2",
+    "duration": 200000,
+    "album": "After Hours",
+    "genre": "R&B",
+    "track_number": 5
+  },
+  {
+    "title": "Unreleased Demo",
+    "artist": "Unknown Artist",
+    "file_id": "4mX9p7",
+    "duration": 185000
+  }
+]

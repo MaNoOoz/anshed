@@ -9,7 +9,7 @@ class ModernSeekBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PlayerController c = Get.find();
+    final AudioPlayerController c = Get.find();
     final theme = Theme.of(context);
     final textStyle = theme.textTheme.bodySmall?.copyWith(
       color: Colors.white70,
@@ -22,10 +22,10 @@ class ModernSeekBar extends StatelessWidget {
       child: Column(
         children: [
           StreamBuilder<Duration>(
-            stream: c.player.positionStream,
+            stream: c.audioPlayer.positionStream,
             builder: (context, positionSnapshot) {
               return StreamBuilder<Duration?>(
-                stream: c.player.durationStream,
+                stream: c.audioPlayer.durationStream,
                 builder: (context, durationSnapshot) {
                   final position = positionSnapshot.data ?? Duration.zero;
                   final duration = durationSnapshot.data ?? Duration.zero;
@@ -38,7 +38,7 @@ class ModernSeekBar extends StatelessWidget {
                   }
 
                   return StreamBuilder<Duration>(
-                    stream: c.player.bufferedPositionStream,
+                    stream: c.audioPlayer.bufferedPositionStream,
                     builder: (context, bufferedSnapshot) {
                       final bufferedPosition =
                           bufferedSnapshot.data ?? Duration.zero;
@@ -77,7 +77,7 @@ class ModernSeekBar extends StatelessWidget {
                                   max: max,
                                   value: value.clamp(0, max),
                                   onChanged: (value) {
-                                    c.seekToPosition(
+                                    c.seek(
                                       Duration(milliseconds: value.toInt()),
                                     );
                                   },
@@ -91,11 +91,11 @@ class ModernSeekBar extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  c.formatDuration(position),
+                                  _formatDuration(position),
                                   style: textStyle,
                                 ),
                                 Text(
-                                  '-${c.formatDuration(duration - position)}',
+                                  '-${_formatDuration(duration - position)}',
                                   style: textStyle,
                                 ),
                               ],
@@ -113,4 +113,8 @@ class ModernSeekBar extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatDuration(Duration duration) {
+  return "${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}";
 }

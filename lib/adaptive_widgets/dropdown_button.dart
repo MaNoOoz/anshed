@@ -1,13 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent_ui;
+import 'package:flutter/material.dart';
 
 class AdaptiveDropdownButton<T> extends StatelessWidget {
   final T? value;
   final List<AdaptiveDropdownMenuItem<T>>? items;
   final TextStyle? style;
   final void Function(T?)? onChanged;
+
   const AdaptiveDropdownButton({
     super.key,
     this.value,
@@ -61,6 +62,7 @@ class AdaptiveDropdownMenuItem<T> {
   final T? value;
   final bool enabled;
   final void Function()? onTap;
+
   AdaptiveDropdownMenuItem(
       {required this.child, this.value, this.enabled = true, this.onTap});
 }

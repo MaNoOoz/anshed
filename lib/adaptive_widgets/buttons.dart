@@ -9,6 +9,7 @@ class AdaptiveButton extends fluent_ui.StatelessWidget {
   final Widget child;
   final void Function()? onPressed;
   final Color? color;
+
   const AdaptiveButton(
       {super.key, required this.child, required this.onPressed, this.color});
 
@@ -37,6 +38,7 @@ class AdaptiveFilledButton extends fluent_ui.StatelessWidget {
   final Color? color;
   final OutlinedBorder? shape;
   final EdgeInsetsGeometry? padding;
+
   const AdaptiveFilledButton({
     super.key,
     required this.child,
@@ -77,6 +79,7 @@ class AdaptiveOutlinedButton extends fluent_ui.StatelessWidget {
   final Widget child;
   final void Function()? onPressed;
   final Color? color;
+
   const AdaptiveOutlinedButton(
       {super.key, required this.child, required this.onPressed, this.color});
 
@@ -113,6 +116,7 @@ class AdaptiveIconButton extends StatelessWidget {
     this.isSelected,
     this.color,
   });
+
   final Widget icon;
   final void Function()? onPressed;
   final bool? isSelected;
