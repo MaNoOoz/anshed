@@ -1,6 +1,6 @@
 import 'dart:io';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 class SongCacheManager {

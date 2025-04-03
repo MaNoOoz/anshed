@@ -111,14 +111,20 @@ class AudioPlayerController extends GetxController {
     audioPlayer.setLoopMode(newMode);
     update();
   }
-
   @override
-  void onInit() async {
+  void onInit() {
     super.onInit();
+    Future.microtask(() async {
+      await init();
+    });
+  }
+
+  Future<void> init() async {
     _initializeAudioPlayer();
+    await loadInitialPlaylist();
+
     final cachedSongs = await _songCacheManager.getAllCachedFiles();
     if (cachedSongs.isEmpty) {
-      // No cached songs, ask the user to download
       await askUserTodownloadSongs();
     }
 
@@ -160,6 +166,7 @@ class AudioPlayerController extends GetxController {
 
   // Load the initial playlist (only once)
   Future<void> loadInitialPlaylist({bool cacheSongs = true}) async {
+    print('Loading initial playlist...');
     if (hasInitializedPlaylist.value) return; // Prevent unnecessary reload
     try {
       loadingState.value = LoadingState.loading;
@@ -178,6 +185,7 @@ class AudioPlayerController extends GetxController {
       Get.snackbar('Error', 'Failed to load playlist: ${e.toString()}');
       update();
     }
+    print('AudioSources after loading: ${_audioSources.length}');
   }
 
   // Add these new observables near your other state variables:
@@ -301,12 +309,18 @@ class AudioPlayerController extends GetxController {
     try {
       if (!hasInitializedPlaylist.value) {
         await loadInitialPlaylist();
+        print('After loading: ${_audioSources.length} sources');
       }
+
+      if (_audioSources.isEmpty) {
+        throw Exception('Playlist is empty. Failed to play.');
+      }
+
       if (startIndex < 0 || startIndex >= _audioSources.length) {
         throw Exception('Invalid start index: $startIndex');
       }
 
-      currentIndex.value = startIndex; // Update current index
+      currentIndex.value = startIndex;
       await audioPlayer.seek(Duration.zero, index: startIndex);
       currentMediaItem.value =
           (_audioSources[startIndex] as UriAudioSource).tag as MediaItem;
@@ -319,9 +333,9 @@ class AudioPlayerController extends GetxController {
 
   // Play a specific song in the playlist
   Future<void> playSong(int index) async {
-    // if (index >= 0 && index < _playlist.value.length) {
-    await playPlaylist(_playlist.value, index);
-    // }
+    if (index >= 0 && index < _playlist.value.length) {
+      await playPlaylist(_playlist.value, index);
+    }
     update();
   }
 

@@ -3,7 +3,7 @@ import 'package:anshed/widgets/text_styles.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
+import 'package:logger/logger.dart';
 
 import '../controllers/PlayerController.dart';
 import '../widgets/SongTile.dart';
@@ -38,6 +38,8 @@ class HomeScreen extends StatelessWidget {
       itemCount: _audioController.playlist.length,
       itemBuilder: (context, index) {
         final song = _audioController.playlist[index];
+        Logger().i('_audioController ${_audioController.playlist.length}');
+
         return SongTile(
           index: index,
           mediaItem: MediaItem(
