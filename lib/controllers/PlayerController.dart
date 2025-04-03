@@ -12,39 +12,27 @@ import 'SongService.dart';
 enum LoadingState { idle, loading, success, error }
 
 class AudioPlayerController extends GetxController {
-  // Properties
-  final RxInt currentIndex = (-1).obs; // -1 means no song selected
+  final RxInt currentIndex = (-1).obs;
   final RxBool hasInitializedPlaylist = false.obs;
-  final RxDouble _volume = 1.0.obs; // Range: 0.0 (mute) to 1.0 (max)
-  final RxDouble _lastVolumeBeforeMute = 1.0.obs;
+  final RxDouble _volume = 1.0.obs;
+  final AudioPlayer audioPlayer = AudioPlayer();
+  final SongService _songService = SongService();
+  final SongCacheManager _songCacheManager = SongCacheManager();
+
+  final Rx<LoadingState> loadingState = Rx<LoadingState>(LoadingState.idle);
+  final Rx<List<Song>> _playlist = Rx<List<Song>>([]);
+  final List<AudioSource> _audioSources = [];
+  final Rx<MediaItem?> currentMediaItem = Rx<MediaItem?>(null);
+
+  final RxInt downloadedCount = 0.obs;
+  final RxInt totalSongs = 0.obs;
+  final RxString currentSongName = ''.obs;
+  final RxString currentSongSize = ''.obs;
 
   double get volume => _volume.value;
 
   bool get isMuted => _volume.value == 0.0;
 
-  // Getter for current playlist index
-  int? get currentPlaylistIndex =>
-      currentIndex.value >= 0 ? currentIndex.value : null;
-
-  final Rx<LoopMode> loopMode = LoopMode.off.obs;
-  final RxBool shuffleMode = false.obs;
-  final AudioPlayer audioPlayer = AudioPlayer();
-  final SongService _songService = SongService();
-  final SongCacheManager _songCacheManager = SongCacheManager();
-
-  final Rx<List<Song>> _playlist = Rx<List<Song>>([]);
-  final Rx<LoadingState> loadingState = Rx<LoadingState>(LoadingState.idle);
-  final List<AudioSource> _audioSources = [];
-  final Rx<MediaItem?> currentMediaItem = Rx<MediaItem?>(MediaItem(
-    id: '',
-    title: '',
-    artist: '',
-    album: '',
-    genre: '',
-    artUri: Uri.parse('assets/s.png'),
-  ));
-
-  // Getters
   List<Song> get playlist => _playlist.value;
 
   bool get isPlaying => audioPlayer.playing;
@@ -53,96 +41,55 @@ class AudioPlayerController extends GetxController {
 
   bool get hasPrevious => audioPlayer.hasPrevious;
 
-  List<MediaItem> get mediaItems =>
-      _playlist.value.map((song) => song.toMediaItem()).toList();
-
-  // Future<void> showDownloadDialog() async {
-  //   await Get.defaultDialog(
-  //     barrierDismissible: false,
-  //     titlePadding: EdgeInsets.all(16),
-  //     title: 'الأغاني',
-  //     content: Column(
-  //       children: [
-  //         Text('هل تريد تنزيل الأغاني؟ لاستخدام التطبيق بدون إنترنت'),
-  //         SizedBox(height: 16),
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //           children: [
-  //             ElevatedButton(
-  //               child: Text('تحميل'),
-  //               onPressed: () async {
-  //                 Get.back();
-  //                 await loadInitialPlaylist(cacheSongs: true);
-  //               },
-  //             ),
-  //             ElevatedButton(
-  //               child: Text('إلغاء'),
-  //               onPressed: () async {
-  //                 Get.back();
-  //                 await loadInitialPlaylist(cacheSongs: false);
-  //               },
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  Future<void> askUserTodownloadSongs() async {
-    showDownloadDialog();
-  }
-
-  // Toggle shuffle mode
-  void toggleShuffle() {
-    shuffleMode.toggle();
-    audioPlayer.setShuffleModeEnabled(shuffleMode.value);
-    update();
-  }
-
-  // Toggle loop mode using Dart's switch expression
-  void toggleLoopMode() {
-    final newMode = switch (loopMode.value) {
-      LoopMode.off => LoopMode.one,
-      LoopMode.one => LoopMode.all,
-      LoopMode.all => LoopMode.off,
-    };
-    loopMode.value = newMode;
-    audioPlayer.setLoopMode(newMode);
-    update();
-  }
   @override
   void onInit() {
     super.onInit();
-    Future.microtask(() async {
-      await init();
-    });
+    Future.microtask(() async => await init());
+  }
+
+  @override
+  void onClose() {
+    audioPlayer.dispose();
+    super.onClose();
   }
 
   Future<void> init() async {
     _initializeAudioPlayer();
     await loadInitialPlaylist();
-
     final cachedSongs = await _songCacheManager.getAllCachedFiles();
-    if (cachedSongs.isEmpty) {
-      await askUserTodownloadSongs();
-    }
-
-    // Initialize player volume
+    if (cachedSongs.isEmpty) await askUserTodownloadSongs();
     audioPlayer.setVolume(_volume.value);
   }
 
-  void setVolume(double value) {
-    final clampedValue = value.clamp(0.0, 1.0);
-    _volume.value = clampedValue;
-    audioPlayer.setVolume(clampedValue);
+  Future<void> askUserTodownloadSongs() async {
+    if (playlist.isEmpty) {
+      return await Get.defaultDialog(
+          title: 'Download Songs',
+          content: Column(children: [
+            Text('Do you want to download the songs?'),
+            ElevatedButton(
+              child: Text('Download'),
+              onPressed: () async {
+                await loadInitialPlaylist();
+                Get.back();
+              },
+            ),
+          ]));
+    }
   }
 
-  // Initialize the audio player by listening to state streams
+  void setVolume(double value) {
+    _volume.value = value.clamp(0.0, 1.0);
+    audioPlayer.setVolume(_volume.value);
+  }
+
   void _initializeAudioPlayer() {
     audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
+        Logger().i('processingState: ${currentIndex.value}');
+
         _handlePlaybackCompletion();
+        update();
       }
     });
 
@@ -154,26 +101,19 @@ class AudioPlayerController extends GetxController {
       }
     });
 
-    // Listen for external volume changes (optional)
-    audioPlayer.volumeStream.listen((value) {
-      _volume.value = value;
-    });
+    audioPlayer.volumeStream.listen((value) => _volume.value = value);
   }
 
-  Future<bool> isSongCached(String fileId) async {
-    return await _songCacheManager.isSongCached(fileId);
-  }
-
-  // Load the initial playlist (only once)
   Future<void> loadInitialPlaylist({bool cacheSongs = true}) async {
-    print('Loading initial playlist...');
-    if (hasInitializedPlaylist.value) return; // Prevent unnecessary reload
+    if (hasInitializedPlaylist.value) return;
     try {
       loadingState.value = LoadingState.loading;
       final songs = await _songService.fetchSongs();
-      if (cacheSongs) {
-        await _cacheSongs(songs);
-      }
+      // Sort songs alphabetically based on the artist's name
+      songs.sort((a, b) => a.artist.compareTo(b.artist));
+      _playlist.value = songs;
+
+      if (cacheSongs) await _cacheSongs(songs);
       _playlist.value = songs;
       await _createAudioSources();
       loadingState.value = LoadingState.success;
@@ -185,25 +125,17 @@ class AudioPlayerController extends GetxController {
       Get.snackbar('Error', 'Failed to load playlist: ${e.toString()}');
       update();
     }
-    print('AudioSources after loading: ${_audioSources.length}');
   }
 
-  // Add these new observables near your other state variables:
-  final RxInt downloadedCount = 0.obs;
-  final RxInt totalSongs = 0.obs;
-  final RxString currentSongName = ''.obs;
-  final RxString currentSongSize =
-      ''.obs; // Assume your Song model has a size property
+  Future<bool> isSongCached(String fileId) async =>
+      await _songCacheManager.isSongCached(fileId);
 
-  // Modify your _cacheSongs method:
   Future<void> _cacheSongs(List<Song> songs) async {
     downloadedCount.value = 0;
     totalSongs.value = songs.length;
     for (final song in songs) {
-      // Update current song info for the progress dialog.
       currentSongName.value = song.title;
-      currentSongSize.value = "5"; // Ensure your Song model provides this info.
-
+      currentSongSize.value = "5";
       if (!await _songCacheManager.isSongCached(song.fileId)) {
         await _songCacheManager.downloadAndCacheSong(song.fileId);
       }
@@ -211,82 +143,6 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-// Create a new method to show download progress:
-  void showDownloadProgressDialog() {
-    Get.dialog(
-      Obx(() {
-        return AlertDialog(
-          title: Center(child: Text('جارٍ التنزيل')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('يتم تنزيل: ${currentSongName.value}'),
-              Text('الحجم: ${currentSongSize.value}'),
-              SizedBox(height: 10),
-              Text('التقدم: ${downloadedCount.value} من ${totalSongs.value}'),
-              SizedBox(height: 10),
-              LinearProgressIndicator(
-                value: totalSongs.value > 0
-                    ? downloadedCount.value / totalSongs.value
-                    : 0,
-              ),
-            ],
-          ),
-        );
-      }),
-      barrierDismissible: false,
-    );
-  }
-
-// Then update your download button in showDownloadDialog:
-  Future<void> showDownloadDialog() async {
-    await Get.defaultDialog(
-      barrierDismissible: false,
-      onWillPop: () async {
-        return false;
-      },
-      titlePadding: EdgeInsets.all(16),
-      title: 'الأغاني',
-      content: Column(
-        children: [
-          Text('هل تريد تنزيل الأغاني؟ لاستخدام التطبيق بدون إنترنت'),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                child: Text('تحميل'),
-                onPressed: () async {
-                  Get.back(); // close the download dialog
-                  showDownloadProgressDialog(); // open progress dialog
-                  await loadInitialPlaylist(cacheSongs: true);
-                  Get.back(); // close progress dialog once done
-                },
-              ),
-              ElevatedButton(
-                child: Text('إلغاء'),
-                onPressed: () async {
-                  Get.back();
-                  await loadInitialPlaylist(cacheSongs: false);
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Cache songs if not already cached
-  // Future<void> _cacheSongs(List<Song> songs) async {
-  //   await Future.wait(songs.map((song) async {
-  //     if (!await _songCacheManager.isSongCached(song.fileId)) {
-  //       await _songCacheManager.downloadAndCacheSong(song.fileId);
-  //     }
-  //   }));
-  // }
-
-  // Create audio sources for the player
   Future<void> _createAudioSources() async {
     _audioSources.clear();
     for (final song in _playlist.value) {
@@ -302,46 +158,38 @@ class AudioPlayerController extends GetxController {
       ConcatenatingAudioSource(children: _audioSources),
       preload: true,
     );
+
+    // Debug: Print the order of songs in the playlist and corresponding audio sources
+    for (int i = 0; i < _playlist.value.length; i++) {
+      Logger().i('Playlist[$i]: ${_playlist.value[i].title}');
+    }
+    for (int i = 0; i < _audioSources.length; i++) {
+      final tag = (_audioSources[i] as UriAudioSource).tag as MediaItem;
+      Logger().i('AudioSources[$i]: ${tag.title}');
+    }
   }
 
-  // Play the given playlist starting at the specified index
-  Future<void> playPlaylist(List<Song> songs, int startIndex) async {
+  Future<void> playPlaylist(List<Song> songs, {int? startIndex}) async {
     try {
-      if (!hasInitializedPlaylist.value) {
-        await loadInitialPlaylist();
-        print('After loading: ${_audioSources.length} sources');
-      }
-
-      if (_audioSources.isEmpty) {
+      if (!hasInitializedPlaylist.value) await loadInitialPlaylist();
+      if (_audioSources.isEmpty)
         throw Exception('Playlist is empty. Failed to play.');
-      }
-
-      if (startIndex < 0 || startIndex >= _audioSources.length) {
-        throw Exception('Invalid start index: $startIndex');
-      }
-
-      currentIndex.value = startIndex;
-      await audioPlayer.seek(Duration.zero, index: startIndex);
+      int indexToPlay = startIndex ?? currentIndex.value;
+      if (indexToPlay < 0 || indexToPlay >= _audioSources.length)
+        throw Exception('Invalid index: $indexToPlay');
+      currentIndex.value = indexToPlay;
+      await audioPlayer.seek(Duration.zero, index: indexToPlay);
       currentMediaItem.value =
-          (_audioSources[startIndex] as UriAudioSource).tag as MediaItem;
+          (_audioSources[indexToPlay] as UriAudioSource).tag as MediaItem;
       await play();
-      update();
     } catch (e) {
       Get.snackbar('Error', 'Failed to play: ${e.toString()}');
     }
   }
 
-  // Play a specific song in the playlist
-  Future<void> playSong(int index) async {
-    if (index >= 0 && index < _playlist.value.length) {
-      await playPlaylist(_playlist.value, index);
-    }
-    update();
-  }
-
-  // Start playing the current audio
   Future<void> play() async {
     try {
+      await audioPlayer.stop();
       await audioPlayer.play();
       update();
     } catch (e) {
@@ -349,7 +197,6 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  // Pause playback
   Future<void> pause() async {
     try {
       await audioPlayer.pause();
@@ -359,65 +206,32 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  // Seek to a specific position in the current track
-  Future<void> seek(Duration position) async {
-    try {
-      await audioPlayer.seek(position);
-      update();
-    } catch (e) {
-      Get.snackbar('Error', 'Seek failed: ${e.toString()}');
-    }
-  }
-
-  // Show the player modal if not already open
-  void showPlayerModal() {
-    if (!(Get.isBottomSheetOpen ?? false)) {
-      Get.bottomSheet(
-        SafeArea(child: PlayerModal()),
-        backgroundColor: Colors.transparent,
-        isDismissible: true,
-      );
-    }
-  }
-
-  // Skip to the previous track
-  Future<void> skipToPrevious() async {
-    try {
-      if (hasPrevious) await audioPlayer.seekToPrevious();
-      update();
-    } catch (e) {
-      Get.snackbar('Error', 'Skip failed: ${e.toString()}');
-    }
-  }
-
-  // Skip to the next track
-  Future<void> skipToNext() async {
-    try {
-      if (hasNext) await audioPlayer.seekToNext();
-      update();
-    } catch (e) {
-      Get.snackbar('Error', 'Skip failed: ${e.toString()}');
-    }
-  }
-
-  // Handle playback completion by moving to the next track or pausing playback
   void _handlePlaybackCompletion() {
+    Logger().i('_handlePlaybackCompletion: ${currentIndex.value}');
+
     if (hasNext) {
       audioPlayer.seekToNext();
     } else {
       pause();
     }
-    update();
   }
 
-  @override
-  void onClose() {
-    audioPlayer.dispose();
-    super.onClose();
+  void showPlayerModal() {
+    if (!(Get.isBottomSheetOpen ?? false)) {
+      Get.bottomSheet(SafeArea(child: PlayerModal()),
+          backgroundColor: Colors.transparent, isDismissible: true);
+    }
   }
 
-  // Expose streams for position and player state
-  Stream<Duration> get positionStream => audioPlayer.positionStream;
-
-  Stream<PlayerState> get playerStateStream => audioPlayer.playerStateStream;
+  Future<void> recoverFromError() async {
+    try {
+      await audioPlayer.stop();
+      await _createAudioSources();
+      if (currentIndex.value >= 0) {
+        await playPlaylist(_playlist.value, startIndex: currentIndex.value);
+      }
+    } catch (e) {
+      Logger().e('Recovery failed: $e');
+    }
+  }
 }

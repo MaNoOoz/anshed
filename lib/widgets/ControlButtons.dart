@@ -76,12 +76,15 @@ class ControlButtons extends StatelessWidget {
                   Icons.skip_next_rounded,
                   color: Colors.white,
                 ),
-                onPressed: () async {
-                  Logger().d("player.hasPrevious : ${player.hasPrevious}");
-
-                  player.hasPrevious ? await player.seekToPrevious() : null;
-                  c.update();
-                }),
+              onPressed: () async {
+                Logger().d(
+                    "player.hasPrevious: ${player.hasPrevious}, controller.hasPrevious: ${c.hasPrevious}");
+                player.hasPrevious
+                    ? await player.seekToPrevious()
+                    : player.seek(Duration.zero, index: 0);
+                c.update();
+              },
+            ),
           ),
           StreamBuilder<PlayerState>(
             stream: player.playerStateStream,

@@ -76,7 +76,7 @@ class ModernSeekBar extends StatelessWidget {
                                   max: max,
                                   value: value.clamp(0, max),
                                   onChanged: (value) {
-                                    c.seek(
+                                    c.audioPlayer.seek(
                                       Duration(milliseconds: value.toInt()),
                                     );
                                   },

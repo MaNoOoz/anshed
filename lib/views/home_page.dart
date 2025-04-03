@@ -15,9 +15,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomSheet: PlayerModal(),
       appBar: AppBar(
-          title: Text('أغاني الثورة السورية', style: bigTextStyle(context))),
+        title: Text('أغاني الثورة السورية', style: bigTextStyle(context)),
+      ),
       body: Obx(() {
         switch (_audioController.loadingState.value) {
           case LoadingState.loading:
@@ -25,7 +25,13 @@ class HomeScreen extends StatelessWidget {
           case LoadingState.error:
             return Center(child: Text('Error loading songs'));
           case LoadingState.success:
-            return _buildPlaylist();
+            return Column(
+              children: [
+                Expanded(child: _buildPlaylist()),
+                // FIXED: No need for ScrollView
+                PlayerModal(),
+              ],
+            );
           default:
             return SizedBox();
         }
@@ -34,11 +40,12 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildPlaylist() {
+    Logger().i('Playlist length: ${_audioController.playlist.length}');
+
     return ListView.builder(
       itemCount: _audioController.playlist.length,
       itemBuilder: (context, index) {
         final song = _audioController.playlist[index];
-        Logger().i('_audioController ${_audioController.playlist.length}');
 
         return SongTile(
           index: index,

@@ -2,6 +2,7 @@ import 'package:anshed/widgets/text_styles.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rename/platform_file_editors/abs_platform_file_editor.dart';
 
 import '../controllers/PlayerController.dart';
 
@@ -59,10 +60,13 @@ class SongTile extends StatelessWidget {
                   })
             ],
           ),
-          onTap: () async {
-            await controller.playSong(index);
-          },
-        ),
+            onTap: () async {
+              int clickedIndex = index; // Capture index before async calls
+              logger.i('Clicked index: $clickedIndex');
+              await controller.playPlaylist(controller.playlist,
+                  startIndex: clickedIndex);
+              controller.update();
+            }),
       );
     });
   }
