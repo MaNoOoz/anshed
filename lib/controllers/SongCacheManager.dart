@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SongCacheManager {
   final BaseCacheManager _cacheManager = DefaultCacheManager();
@@ -27,6 +29,23 @@ class SongCacheManager {
       print('Error retrieving cached song: $e');
       return null;
     }
+  }
+
+  Future<List<File>> getAllCachedFiles() async {
+    final tempDir = await getTemporaryDirectory();
+    final cacheDir = Directory(
+        '${tempDir.path}/libCachedImageData'); // DefaultCacheManager's folder structure may vary
+    final List<File> files = [];
+
+    if (await cacheDir.exists()) {
+      await for (var entity
+          in cacheDir.list(recursive: true, followLinks: false)) {
+        if (entity is File) {
+          files.add(entity);
+        }
+      }
+    }
+    return files;
   }
 
   // Check if the song exists in the cache

@@ -56,6 +56,43 @@ class AudioPlayerController extends GetxController {
   List<MediaItem> get mediaItems =>
       _playlist.value.map((song) => song.toMediaItem()).toList();
 
+  // Future<void> showDownloadDialog() async {
+  //   await Get.defaultDialog(
+  //     barrierDismissible: false,
+  //     titlePadding: EdgeInsets.all(16),
+  //     title: 'الأغاني',
+  //     content: Column(
+  //       children: [
+  //         Text('هل تريد تنزيل الأغاني؟ لاستخدام التطبيق بدون إنترنت'),
+  //         SizedBox(height: 16),
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //           children: [
+  //             ElevatedButton(
+  //               child: Text('تحميل'),
+  //               onPressed: () async {
+  //                 Get.back();
+  //                 await loadInitialPlaylist(cacheSongs: true);
+  //               },
+  //             ),
+  //             ElevatedButton(
+  //               child: Text('إلغاء'),
+  //               onPressed: () async {
+  //                 Get.back();
+  //                 await loadInitialPlaylist(cacheSongs: false);
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Future<void> askUserTodownloadSongs() async {
+    showDownloadDialog();
+  }
+
   // Toggle shuffle mode
   void toggleShuffle() {
     shuffleMode.toggle();
@@ -79,7 +116,12 @@ class AudioPlayerController extends GetxController {
   void onInit() async {
     super.onInit();
     _initializeAudioPlayer();
-    await loadInitialPlaylist();
+    final cachedSongs = await _songCacheManager.getAllCachedFiles();
+    if (cachedSongs.isEmpty) {
+      // No cached songs, ask the user to download
+      await askUserTodownloadSongs();
+    }
+
     // Initialize player volume
     audioPlayer.setVolume(_volume.value);
   }
@@ -117,18 +159,14 @@ class AudioPlayerController extends GetxController {
   }
 
   // Load the initial playlist (only once)
-  Future<void> loadInitialPlaylist() async {
+  Future<void> loadInitialPlaylist({bool cacheSongs = true}) async {
     if (hasInitializedPlaylist.value) return; // Prevent unnecessary reload
-    final songs = await _songService.fetchSongs();
-    Logger().e('songs $songs');
-
     try {
       loadingState.value = LoadingState.loading;
       final songs = await _songService.fetchSongs();
-      Logger().e('songs $songs');
-
-      _playlist.value.clear();
-      await _cacheSongs(songs);
+      if (cacheSongs) {
+        await _cacheSongs(songs);
+      }
       _playlist.value = songs;
       await _createAudioSources();
       loadingState.value = LoadingState.success;
@@ -142,14 +180,103 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  // Cache songs if not already cached
+  // Add these new observables near your other state variables:
+  final RxInt downloadedCount = 0.obs;
+  final RxInt totalSongs = 0.obs;
+  final RxString currentSongName = ''.obs;
+  final RxString currentSongSize =
+      ''.obs; // Assume your Song model has a size property
+
+  // Modify your _cacheSongs method:
   Future<void> _cacheSongs(List<Song> songs) async {
-    await Future.wait(songs.map((song) async {
+    downloadedCount.value = 0;
+    totalSongs.value = songs.length;
+    for (final song in songs) {
+      // Update current song info for the progress dialog.
+      currentSongName.value = song.title;
+      currentSongSize.value = "5"; // Ensure your Song model provides this info.
+
       if (!await _songCacheManager.isSongCached(song.fileId)) {
         await _songCacheManager.downloadAndCacheSong(song.fileId);
       }
-    }));
+      downloadedCount.value++;
+    }
   }
+
+// Create a new method to show download progress:
+  void showDownloadProgressDialog() {
+    Get.dialog(
+      Obx(() {
+        return AlertDialog(
+          title: Center(child: Text('جارٍ التنزيل')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('يتم تنزيل: ${currentSongName.value}'),
+              Text('الحجم: ${currentSongSize.value}'),
+              SizedBox(height: 10),
+              Text('التقدم: ${downloadedCount.value} من ${totalSongs.value}'),
+              SizedBox(height: 10),
+              LinearProgressIndicator(
+                value: totalSongs.value > 0
+                    ? downloadedCount.value / totalSongs.value
+                    : 0,
+              ),
+            ],
+          ),
+        );
+      }),
+      barrierDismissible: false,
+    );
+  }
+
+// Then update your download button in showDownloadDialog:
+  Future<void> showDownloadDialog() async {
+    await Get.defaultDialog(
+      barrierDismissible: false,
+      onWillPop: () async {
+        return false;
+      },
+      titlePadding: EdgeInsets.all(16),
+      title: 'الأغاني',
+      content: Column(
+        children: [
+          Text('هل تريد تنزيل الأغاني؟ لاستخدام التطبيق بدون إنترنت'),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                child: Text('تحميل'),
+                onPressed: () async {
+                  Get.back(); // close the download dialog
+                  showDownloadProgressDialog(); // open progress dialog
+                  await loadInitialPlaylist(cacheSongs: true);
+                  Get.back(); // close progress dialog once done
+                },
+              ),
+              ElevatedButton(
+                child: Text('إلغاء'),
+                onPressed: () async {
+                  Get.back();
+                  await loadInitialPlaylist(cacheSongs: false);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Cache songs if not already cached
+  // Future<void> _cacheSongs(List<Song> songs) async {
+  //   await Future.wait(songs.map((song) async {
+  //     if (!await _songCacheManager.isSongCached(song.fileId)) {
+  //       await _songCacheManager.downloadAndCacheSong(song.fileId);
+  //     }
+  //   }));
+  // }
 
   // Create audio sources for the player
   Future<void> _createAudioSources() async {

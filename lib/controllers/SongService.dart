@@ -12,12 +12,12 @@ class SongService {
   Future<List<Song>> fetchSongs() async {
     try {
       final response = await http.get(Uri.parse(jsonUrl));
-      Logger().e(' data $response');
+      // Logger().e(' data $response');
 
       if (response.statusCode == 200) {
         String decodedBody = utf8.decode(response.bodyBytes);
         List<dynamic> data = json.decode(decodedBody);
-        Logger().e(' data $data');
+        // Logger().e(' data $data');
 
         return data.map((songJson) => Song.fromJson(songJson)).toList();
       } else {
