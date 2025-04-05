@@ -16,45 +16,34 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('أغاني الثورة السورية', style: bigTextStyle(context)),
+        centerTitle: true,
+        title: Text(
+          'أغاني الثورة السورية',
+          style: mediumTextStyle(context),
+        ),
       ),
-      body: Obx(() {
-        switch (_audioController.loadingState.value) {
-          case LoadingState.loading:
-            return Center(child: CircularProgressIndicator());
-          case LoadingState.error:
-            return Center(child: Text('Error loading songs'));
-          case LoadingState.success:
-            return Column(
-              children: [
-                Expanded(child: _buildPlaylist()),
-                // FIXED: No need for ScrollView
-                PlayerModal(),
-              ],
-            );
-          default:
-            return SizedBox();
-        }
-      }),
+      body: Column(
+        children: [
+          Expanded(child: Obx(() {
+            return _buildPlaylist();
+          })),
+          PlayerModal()
+        ],
+      ),
     );
   }
 
   Widget _buildPlaylist() {
-    Logger().i('Playlist length: ${_audioController.playlist.length}');
+    Logger().i('Playlist length: ${_audioController.mediaPlaylist.length}');
 
     return ListView.builder(
-      itemCount: _audioController.playlist.length,
+      itemCount: _audioController.mediaPlaylist.length,
       itemBuilder: (context, index) {
-        final song = _audioController.playlist[index];
+        final mediaItem = _audioController.mediaPlaylist[index];
 
         return SongTile(
           index: index,
-          mediaItem: MediaItem(
-            id: song.fileId,
-            title: song.title,
-            artist: song.artist,
-            artUri: Uri.parse('assets/s.png'),
-          ),
+          mediaItem: mediaItem, // Pass MediaItem for UI
         );
       },
     );

@@ -7,13 +7,13 @@ import '../controllers/PlayerController.dart';
 import 'VolDialoag.dart';
 
 class ControlButtons extends StatelessWidget {
-  final AudioPlayer player;
   final AudioPlayerController c = Get.find<AudioPlayerController>();
 
-  ControlButtons(this.player, {Key? key}) : super(key: key);
+  ControlButtons({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final player = c.audioPlayer; // <- access the player from controller
     return Container(
       color: Colors.black,
       width: double.infinity,

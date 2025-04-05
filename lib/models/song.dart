@@ -74,7 +74,6 @@ class Song {
       artist: artist,
       album: album,
       genre: genre,
-      artUri: artUrl != null ? Uri.tryParse(artUrl!) : null,
       duration: durationAsDuration,
       // trackNumber: trackNumber,
     );

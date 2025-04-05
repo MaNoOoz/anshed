@@ -7,6 +7,8 @@ import 'package:just_audio_background/just_audio_background.dart';
 
 import 'controllers/PlayerController.dart';
 import 'controllers/SettingsController.dart';
+import 'controllers/SongCacheManager.dart';
+import 'controllers/SongService.dart';
 import 'views/home_page.dart';
 
 const appId = 'sXNSN01jZLzR5m5';
@@ -24,6 +26,9 @@ Future<void> main() async {
   // );
   // // Update the request configuration
   // MobileAds.instance.updateRequestConfiguration(requestConfiguration);
+  // Initialize any necessary services
+  final SongService songService = SongService();
+  final SongCacheManager songCacheManager = SongCacheManager();
 
   // Initialize background playback
   await JustAudioBackground.init(
@@ -38,7 +43,8 @@ Future<void> main() async {
     fastForwardInterval: const Duration(seconds: 10),
     rewindInterval: const Duration(seconds: 10),
   );
-  Get.put(AudioPlayerController()); // Or Get.lazyPut(() => PlayerController());
+  Get.put(AudioPlayerController(songService,
+      songCacheManager)); // Or Get.lazyPut(() => PlayerController());
   // Get.put(AdController()); // Or Get.lazyPut(() => PlayerController());
 
   runApp(MyApp());

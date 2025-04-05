@@ -15,11 +15,7 @@ class PlayerModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<AudioPlayerController>(
       builder: (controller) {
-        final currentMediaItem = _controller.currentMediaItem.value;
-        if (currentMediaItem == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
+        final currentMediaItem = _controller.currentMediaItem;
         return Stack(
           children: [
             SizedBox(
@@ -48,32 +44,31 @@ class PlayerModal extends StatelessWidget {
                 children: [
                   // Header and album art
                   const SizedBox(height: 6),
-                  GetBuilder<AudioPlayerController>(
-                    builder: (c) {
-                      // Song info
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          children: [
-                            // Text(_controller.playlist[_controller.currentIndex.value].title,
-                            Text(
-                              currentMediaItem.title ?? "Unknown Artist",
-                              style: bigTextStyle(context),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              currentMediaItem.artist ?? "Unknown Artist",
-                              style: textStyle(context),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+
+                  // Song info
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      children: [
+                        if (currentMediaItem != null) ...[
+                          // Show song info only when available
+                          Text(
+                            currentMediaItem.title ?? "Unknown Artist",
+                            style: bigTextStyle(context),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            currentMediaItem.artist ?? "Unknown Artist",
+                            style: textStyle(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ]
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 6),
@@ -84,7 +79,7 @@ class PlayerModal extends StatelessWidget {
                   const SizedBox(height: 14),
 
                   // Playback controls
-                  ControlButtons(_controller.audioPlayer),
+                  ControlButtons(),
 
                   const SizedBox(height: 14),
                 ],
