@@ -1,5 +1,8 @@
+import 'package:anshed/controllers/PlayerController.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,6 +25,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Get.find<AudioPlayerController>();
     return Scaffold(
       appBar: AdaptiveAppBar(
         // leading: AdaptiveBackButton(),
@@ -38,7 +42,7 @@ class SettingsScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-                ...settingScreenData(context).map((e) {
+                ...settingScreenData(context, c).map((e) {
                   return AdaptiveListTile(
                     margin: const EdgeInsets.symmetric(vertical: 2),
                     title: Text(
@@ -86,8 +90,10 @@ Future<void> _launchUrl(Uri url) async {
   }
 }
 
-List<SettingItem> settingScreenData(BuildContext context) => [
-      SettingItem(
+List<SettingItem> settingScreenData(
+    BuildContext context, AudioPlayerController c) {
+  return [
+    SettingItem(
         title: "حذف الإعلانات ",
         icon: Icons.payment_sharp,
         color: Colors.accents[5],
@@ -101,8 +107,10 @@ List<SettingItem> settingScreenData(BuildContext context) => [
         icon: Icons.download_rounded,
         color: Colors.accents[0],
         hasNavigation: true,
-        // onTap: (context) => c.downloadAllSongs(),
-      ),
+      onTap: (context) async {
+        return await c.createAudioSourcesFromMemory();
+      },
+    ),
       SettingItem(
         title: "تحديث الأناشيد",
         icon: CupertinoIcons.music_note_list,
@@ -133,7 +141,4 @@ List<SettingItem> settingScreenData(BuildContext context) => [
         },
       ),
     ];
-
-List<SettingItem> allSettingsData(BuildContext context) => [
-      ...settingScreenData(context),
-    ];
+}
