@@ -15,13 +15,11 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () async {
-      //     // await _audioController.createAudioSourcesFromApi();
-      //
-      //     Logger().i("done ${_audioController.createAudioSourcesFromApi()}");
-      //   },
-      // ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await _audioController.createAudioSourcesFromCacheOrApi();
+        },
+      ),
       appBar: AppBar(
         actions: [
           IconButton(

@@ -108,7 +108,7 @@ List<SettingItem> settingScreenData(
         color: Colors.accents[0],
         hasNavigation: true,
       onTap: (context) async {
-        return await c.createAudioSourcesFromMemory();
+        return await c.createAudioSourcesFromCacheOrApi();
       },
     ),
       SettingItem(

@@ -86,7 +86,7 @@ class AudioPlayerController extends GetxController {
   }
 
   Future<void> _initialize() async {
-    await createAudioSourcesFromApi();
+    await createAudioSourcesFromCacheOrApi();
   }
 
   void _initAudioPlayer() {
@@ -140,14 +140,14 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  Future<void> createAudioSourcesFromApi() async {
-    Logger().i('Creating audio sources from API...');
+  Future<void> createAudioSourcesFromCacheOrApi() async {
+    Logger().i('Creating audio sources from cache or API...');
     try {
       final sources = <AudioSource>[];
 
-      // Fetch songs from API
       final apiSongs = await _songService.fetchSongs();
       apiSongs.sort((a, b) => a.artist.compareTo(b.artist));
+      final defaultArtUri = await getNotificationArtUriFromAsset();
 
       if (apiSongs.isEmpty) {
         Logger().w('No songs returned from API.');
@@ -156,24 +156,26 @@ class AudioPlayerController extends GetxController {
       }
 
       for (final song in apiSongs) {
-        // Construct the Google Drive download URL
-        final fileUrl =
-            'https://drive.google.com/uc?export=download&id=${song.fileId}';
+        final cachedPath =
+            await _songCacheManager.getCachedSongPath(song.fileId);
 
-        // Add to audio sources
+        final uri = cachedPath != null
+            ? Uri.file(cachedPath)
+            : Uri.parse(
+                'https://drive.google.com/uc?export=download&id=${song.fileId}');
+
         sources.add(AudioSource.uri(
-          Uri.parse(fileUrl), // Use the constructed URL
+          uri,
           tag: MediaItem(
-            id: song.fileId,
-            title: song.title,
-            artist: song.artist,
-            album: song.album,
-            // duration: Duration(milliseconds: song.duration!),
-            // artUri: Uri.parse(song.artUrl!), // Cover art URL
-            genre: song.genre, // Add other metadata if needed
-          ),
+              id: song.fileId,
+              title: song.title,
+              artist: song.artist,
+              album: song.album,
+              genre: song.genre,
+              artUri: defaultArtUri),
         ));
       }
+
       _mediaPlaylist.value = convertPlaylistToMediaItems(apiSongs);
 
       if (sources.isNotEmpty) {
@@ -181,13 +183,14 @@ class AudioPlayerController extends GetxController {
           ConcatenatingAudioSource(children: sources),
           initialIndex: 0,
         );
-        Logger().i('Audio sources created from API. Total: ${sources.length}');
+        Logger().i(
+            'Audio sources created using cache or API. Total: ${sources.length}');
       } else {
         Logger().w('No valid audio sources found.');
         _playerState.value = CustomPlayerState.error;
       }
     } catch (e) {
-      Logger().e('Error creating audio sources from API: $e');
+      Logger().e('Error creating audio sources: $e');
       _playerState.value = CustomPlayerState.error;
     }
   }
@@ -205,7 +208,8 @@ class AudioPlayerController extends GetxController {
         album: song.album,
         // Song album
         // duration: Duration(milliseconds: song.duration), // Convert duration from ms
-        // artUri: Uri.parse(song.art_url), // Album art URL (cover art)
+        artUri: Uri.parse("assets/s.png"),
+        // Album art URL (cover art)
         genre: song.genre, // Optional: Include genre if needed
       );
     }).toList();

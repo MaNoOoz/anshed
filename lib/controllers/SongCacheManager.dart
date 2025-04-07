@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 class SongCacheManager {
@@ -56,6 +57,21 @@ class SongCacheManager {
       print('Error retrieving cached song: $e');
       return null;
     }
+  }
+
+  Future<String?> getCachedSongPath(String fileId) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/$fileId.mp3';
+      final file = File(filePath);
+
+      if (await file.exists()) {
+        return file.path;
+      }
+    } catch (e) {
+      Logger().e('Failed to check cached song: $e');
+    }
+    return null;
   }
 
   Future<List<File>> getAllCachedFiles() async {
