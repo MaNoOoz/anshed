@@ -1,6 +1,6 @@
+import 'package:anshed/views/settings_page.dart';
 import 'package:anshed/widgets/PlayerModal.dart';
 import 'package:anshed/widgets/text_styles.dart';
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
@@ -15,7 +15,22 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () async {
+      //     // await _audioController.createAudioSourcesFromApi();
+      //
+      //     Logger().i("done ${_audioController.createAudioSourcesFromApi()}");
+      //   },
+      // ),
       appBar: AppBar(
+        actions: [
+          IconButton(
+            onPressed: () async {
+              Get.to(() => SettingsScreen());
+            },
+            icon: Icon(Icons.settings),
+          )
+        ],
         centerTitle: true,
         title: Text(
           'أغاني الثورة السورية',
@@ -43,7 +58,26 @@ class HomeScreen extends StatelessWidget {
 
         return SongTile(
           index: index,
-          mediaItem: mediaItem, // Pass MediaItem for UI
+          mediaItem: mediaItem,
+          onAddToPlaylist: () async {
+            final currentIndex = _audioController.audioPlayer.currentIndex;
+
+            // Only proceed if a different song is tapped
+            if (index != currentIndex) {
+              await _audioController.audioPlayer
+                  .stop(); // optional, ExoPlayer handles this internally
+              await _audioController.setCurrentIndex(index);
+              await _audioController.audioPlayer.play();
+
+              Logger().i('Now playing index $index: ${mediaItem.title}');
+            } else {
+              await _audioController.audioPlayer.play();
+
+              Logger().i('Tapped current song again: ${mediaItem.title}');
+            }
+          },
+
+          // Pass MediaItem for UI
         );
       },
     );

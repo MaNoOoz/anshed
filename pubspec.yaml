@@ -42,7 +42,6 @@ dependencies:
   fluent_ui:
   modal_bottom_sheet: ^3.0.0  # Check for the latest version
 
-  parse_server_sdk_flutter: ^9.0.0
   solid_bottom_sheet:
   audio_session:
   shared_preferences:

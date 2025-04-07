@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
@@ -9,7 +8,6 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/song.dart';
-import '../widgets/PlayerModal.dart';
 import 'SongCacheManager.dart';
 import 'SongService.dart';
 
@@ -33,15 +31,18 @@ class AudioPlayerController extends GetxController {
 
   AudioPlayer get audioPlayer => _audioPlayer;
   final RxList<MediaItem> _mediaPlaylist = RxList<MediaItem>([]);
+  final currentMediaItem =
+      Rx<MediaItem?>(null); // Observable for the current media item
+  void setCurrentMediaItem(int index) {
+    currentMediaItem.value = mediaPlaylist[index];
+  }
 
   List<MediaItem> get mediaPlaylist => _mediaPlaylist;
 
   // Reactive State
   final Rx<CustomPlayerState> _playerState = CustomPlayerState.idle.obs;
   final RxList<Song> _playlist = RxList<Song>([]);
-  final Rx<MediaItem?> _currentMediaItem = Rx<MediaItem?>(null);
 
-  set currentMediaItem(MediaItem? item) => _currentMediaItem.value = item;
   final RxInt _currentIndex = 0.obs;
   final RxDouble _volume = 1.0.obs;
   final RxBool _isMuted = false.obs;
@@ -51,9 +52,8 @@ class AudioPlayerController extends GetxController {
 
   List<Song> get playlist => _playlist;
 
-  MediaItem? get currentMediaItem => _currentMediaItem.value;
+  RxInt get currentIndex => _currentIndex;
 
-  int get currentIndex => _currentIndex.value;
   double get volume => _volume.value;
 
   bool get isMuted => _isMuted.value;
@@ -62,6 +62,13 @@ class AudioPlayerController extends GetxController {
 
   bool get hasPrevious => _currentIndex.value > 0;
 
+// Inside AudioPlayerController
+  final RxString title = ''.obs; // Reactive property for title
+
+  void updateTitle() {
+    title.value = currentMediaItem.value?.title ?? 'No Title';
+  }
+
   // Constructor
   AudioPlayerController(this._songService, this._songCacheManager);
 
@@ -69,7 +76,7 @@ class AudioPlayerController extends GetxController {
   void onInit() {
     super.onInit();
     _initAudioPlayer();
-    _loadInitialPlaylist();
+    _initialize();
   }
 
   @override
@@ -78,138 +85,143 @@ class AudioPlayerController extends GetxController {
     super.onClose();
   }
 
-  void _initAudioPlayer() {
-    _audioPlayer.playerStateStream.listen(_handlePlayerStateChange);
-    _audioPlayer.currentIndexStream.listen(_handleIndexChange);
-    _audioPlayer.volumeStream.listen(_handleVolumeChange);
+  Future<void> _initialize() async {
+    await createAudioSourcesFromApi();
   }
 
-  Future<void> _loadInitialPlaylist() async {
-    Logger().i('Loading initial playlist...');
-    _playerState.value = CustomPlayerState.loading;
-    try {
-      final songs = await _songService.fetchSongs();
+  void _initAudioPlayer() {
+    // Update _currentIndex and currentMediaItem when song changes
+    _audioPlayer.currentIndexStream.listen((index) {
+      if (index != null && index >= 0 && index < mediaPlaylist.length) {
+        _currentIndex.value = index;
+        currentMediaItem.value = mediaPlaylist[index];
+        updateTitle();
+        Logger().i("Title Updated: ${title.value}");
+        Logger().i(
+            'Current index updated: $_currentIndex, Media item: ${currentMediaItem.value?.title}');
+      } else {
+        Logger().w('Invalid index: $index');
+      }
+    });
 
-      if (songs.isEmpty) {
-        Logger().w('No songs found in API.');
+    // Set initial values
+    if (mediaPlaylist.isNotEmpty) {
+      _currentIndex.value = 0;
+      currentMediaItem.value = mediaPlaylist[0];
+    }
+  }
+
+  Future<void> setCurrentIndex(int index) async {
+    try {
+      await audioPlayer.seek(Duration.zero, index: index);
+      currentIndex.value = index;
+      title.value = mediaPlaylist[index].title;
+      Logger().i('Switched to: ${mediaPlaylist[index].title}');
+    } catch (e) {
+      Logger().e('Failed to set current index: $e');
+    }
+  }
+
+  void goToNext() {
+    if (hasNext) {
+      setCurrentIndex(_currentIndex.value + 1);
+      _audioPlayer.seekToNext();
+    } else {
+      Logger().w('No next track available');
+    }
+  }
+
+  void goToPrevious() {
+    if (hasPrevious) {
+      setCurrentIndex(_currentIndex.value - 1);
+      _audioPlayer.seekToPrevious();
+    } else {
+      Logger().w('No previous track available');
+    }
+  }
+
+  Future<void> createAudioSourcesFromApi() async {
+    Logger().i('Creating audio sources from API...');
+    try {
+      final sources = <AudioSource>[];
+
+      // Fetch songs from API
+      final apiSongs = await _songService.fetchSongs();
+      apiSongs.sort((a, b) => a.artist.compareTo(b.artist));
+
+      if (apiSongs.isEmpty) {
+        Logger().w('No songs returned from API.');
         _playerState.value = CustomPlayerState.error;
         return;
       }
 
-      songs.sort((a, b) => a.artist.compareTo(b.artist));
-      _playlist.assignAll(songs);
-      final defaultArtUri = await getNotificationArtUriFromAsset();
-      _mediaPlaylist.assignAll(songs
-          .map((song) => MediaItem(
-                id: song.fileId,
-                title: song.title,
-                artist: song.artist,
-                artUri: defaultArtUri,
-              ))
-          .toList());
+      for (final song in apiSongs) {
+        // Construct the Google Drive download URL
+        final fileUrl =
+            'https://drive.google.com/uc?export=download&id=${song.fileId}';
 
-      await _cacheSongs(songs);
-      await _createAudioSources();
-
-      _playerState.value = CustomPlayerState.ready;
-
-      if (_playlist.isNotEmpty) {
-        _currentMediaItem.value = _playlist[0].toMediaItem();
+        // Add to audio sources
+        sources.add(AudioSource.uri(
+          Uri.parse(fileUrl), // Use the constructed URL
+          tag: MediaItem(
+            id: song.fileId,
+            title: song.title,
+            artist: song.artist,
+            album: song.album,
+            // duration: Duration(milliseconds: song.duration!),
+            // artUri: Uri.parse(song.artUrl!), // Cover art URL
+            genre: song.genre, // Add other metadata if needed
+          ),
+        ));
       }
-
-      Logger().i(
-          'Initial playlist loaded successfully. Total songs: ${_playlist.length}');
-    } catch (e) {
-      _playerState.value = CustomPlayerState.error;
-      Logger().e('Error loading playlist: $e');
-      Get.snackbar('Error', 'Failed to load playlist: $e');
-    }
-  }
-  Future<void> _cacheSongs(List<Song> songs) async {
-    Logger().i('Caching ${songs.length} songs...');
-    final tasks = <Future>[];
-    for (final song in songs) {
-      final isCached = await _songCacheManager.isSongCached(song.fileId);
-      if (!isCached) {
-        tasks.add(_songCacheManager.downloadAndCacheSong(song.fileId));
-      }
-    }
-    await Future.wait(tasks);
-
-    Logger().i('Caching completed.');
-  }
-
-  Future<void> _createAudioSources() async {
-    Logger().i('Creating audio sources...');
-    try {
-      final sources = <AudioSource>[];
-
-      for (final song in _playlist) {
-        final file = await _songCacheManager.getCachedSong(song.fileId);
-        if (file != null) {
-          sources.add(AudioSource.uri(Uri.file(file.file.path),
-              tag: song.toMediaItem()));
-        } else {
-          Logger().w('Song not cached: ${song.title}');
-        }
-      }
+      _mediaPlaylist.value = convertPlaylistToMediaItems(apiSongs);
 
       if (sources.isNotEmpty) {
         await _audioPlayer.setAudioSource(
           ConcatenatingAudioSource(children: sources),
           initialIndex: 0,
         );
-        Logger().i('Audio sources created. Total: ${sources.length}');
+        Logger().i('Audio sources created from API. Total: ${sources.length}');
       } else {
-        Logger().w('No audio sources found.');
+        Logger().w('No valid audio sources found.');
         _playerState.value = CustomPlayerState.error;
       }
     } catch (e) {
-      Logger().e('Error creating audio sources: $e');
+      Logger().e('Error creating audio sources from API: $e');
       _playerState.value = CustomPlayerState.error;
     }
   }
 
-  Future<void> playPlaylist(List<MediaItem> playlist,
-      {int startIndex = 0}) async {
-    final audioSources = <AudioSource>[];
-    final defaultArtUri = await getNotificationArtUriFromAsset();
-    for (var mediaItem in playlist) {
-      final cachedFile = await _songCacheManager.getCachedSong(mediaItem.id);
+  // Function to convert playlist to MediaItem list
+  List<MediaItem> convertPlaylistToMediaItems(List<Song> playlist) {
+    return playlist.map((song) {
+      return MediaItem(
+        id: song.fileId,
+        // Unique identifier for the audio file
+        title: song.title,
+        // Song title
+        artist: song.artist,
+        // Song artist
+        album: song.album,
+        // Song album
+        // duration: Duration(milliseconds: song.duration), // Convert duration from ms
+        // artUri: Uri.parse(song.art_url), // Album art URL (cover art)
+        genre: song.genre, // Optional: Include genre if needed
+      );
+    }).toList();
+  }
 
-      if (cachedFile != null && cachedFile.file.existsSync()) {
-        final fileSize = cachedFile.file.lengthSync();
-        if (fileSize > 0) {
-          Logger().i('✅ File exists for: ${mediaItem.title}, Size: $fileSize');
-          // 👇 Override artUri with local asset for notification
-          final updatedMediaItem = mediaItem.copyWith(
-            artUri: defaultArtUri,
-          );
-          audioSources.add(AudioSource.uri(Uri.file(cachedFile.file.path),
-              tag: updatedMediaItem));
-        } else {
-          Logger().e('❌ File is 0 bytes for: ${mediaItem.title}, removing it');
-          await cachedFile.file.delete();
-        }
-      } else {
-        Logger().e(
-            '❌ Missing file for: ${mediaItem.title}, path: ${cachedFile?.file.path}');
+  Future<void> clearPlaylist() async {
+    Logger().d('clearPlaylist  ');
+
+    await _songCacheManager.getAllCachedFiles().then((files) {
+      for (var file in files) {
+        Logger().d('file  ${file.path}');
+
+        file.delete();
       }
-    }
-
-    if (audioSources.isEmpty) {
-      Logger().e('🚫 No valid audio sources to play.');
-      return;
-    }
-
-    await _audioPlayer.setAudioSource(
-      ConcatenatingAudioSource(children: audioSources),
-      initialIndex: startIndex,
-    );
-
-    await _audioPlayer.play();
-    _currentMediaItem.value = playlist[startIndex];
-    update();
+    });
+    Logger().i('Playlist cleared ${_songCacheManager.getAllCachedFiles()}');
   }
 
   // Player Control
@@ -245,47 +257,9 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  Future<void> next() async {
-    if (hasNext) {
-      try {
-        await _audioPlayer.seekToNext();
-      } catch (e) {
-        Logger().e('Next error: $e');
-        Get.snackbar('Error', 'Next failed: $e');
-      }
-    }
-  }
-
-  Future<void> previous() async {
-    if (hasPrevious) {
-      try {
-        await _audioPlayer.seekToPrevious();
-      } catch (e) {
-        Logger().e('Previous error: $e');
-        Get.snackbar('Error', 'Previous failed: $e');
-      }
-    }
-  }
-
-  Future<void> playAtIndex(int index) async {
-    if (index >= 0 &&
-        index < _playlist.length &&
-        _playerState.value != CustomPlayerState.error) {
-      try {
-        _currentIndex.value = index;
-        await _audioPlayer.seek(Duration.zero, index: index);
-        _currentMediaItem.value = _playlist[index].toMediaItem();
-        await play();
-      } catch (e) {
-        Logger().e('PlayAtIndex error: $e');
-        Get.snackbar('Error', 'Failed to play song: $e');
-      }
-    }
-  }
-
-  void setVolume(double value) {
+  void setVolume(double value) async {
     _volume.value = value;
-    _audioPlayer.setVolume(value);
+    await _audioPlayer.setVolume(value);
   }
 
   void toggleMute() {
@@ -315,62 +289,12 @@ class AudioPlayerController extends GetxController {
     }
   }
 
-  void _handleIndexChange(int? newIndex) {
-    if (newIndex == null || _mediaPlaylist.isEmpty) {
-      Logger().w('❗ Null index or empty playlist. Resetting to first song.');
-      _audioPlayer.seek(Duration.zero, index: 0);
-      _currentIndex.value = 0;
-      currentMediaItem = _mediaPlaylist.isNotEmpty ? _mediaPlaylist[0] : null;
-      update();
-      return;
-    }
-
-    if (newIndex >= 0 && newIndex < _mediaPlaylist.length) {
-      _currentIndex.value = newIndex;
-      final song = _mediaPlaylist[newIndex];
-      currentMediaItem = song;
-      Logger().i('🎵 Changed to song: ${song.title}');
-      update();
-    } else {
-      Logger().w(
-          '⚠️ Invalid index: $newIndex. Playlist length: ${_mediaPlaylist.length}');
-    }
-  }
-
-  void _handleVolumeChange(double vol) {
-    _volume.value = vol;
-    _isMuted.value = vol == 0.0;
-  }
-
   void _handlePlaybackCompletion() {
     Logger().i('Playback completed.');
     if (_audioPlayer.hasNext) {
-      next();
+      _audioPlayer.seekToNext();
     } else {
       _audioPlayer.stop();
-    }
-  }
-  void showPlayerModal() {
-    if (!(Get.isBottomSheetOpen ?? false)) {
-      Get.bottomSheet(
-        SafeArea(child: PlayerModal()),
-        backgroundColor: Colors.transparent,
-        isDismissible: true,
-      );
-    }
-  }
-
-  Future<void> recoverFromError() async {
-    try {
-      await _audioPlayer.stop();
-      await _createAudioSources();
-      if (_currentIndex.value >= 0) {
-        await playAtIndex(_currentIndex.value);
-      }
-    } catch (e) {
-      Logger().e('Recovery failed: $e');
-      _playerState.value = CustomPlayerState.error;
-      Get.snackbar('Error', 'Could not recover player.');
     }
   }
 

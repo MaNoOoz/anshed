@@ -13,7 +13,7 @@ class ControlButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final player = c.audioPlayer; // <- access the player from controller
+    final player = c.audioPlayer; // Access the player from the controller
     return Container(
       color: Colors.black,
       width: double.infinity,
@@ -23,6 +23,7 @@ class ControlButtons extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         textDirection: TextDirection.rtl,
         children: [
+          // Loop Mode Button
           StreamBuilder<LoopMode>(
             stream: player.loopModeStream,
             builder: (context, snapshot) {
@@ -47,6 +48,8 @@ class ControlButtons extends StatelessWidget {
               );
             },
           ),
+
+          // Shuffle Mode Button
           StreamBuilder<bool>(
             stream: player.shuffleModeEnabledStream,
             builder: (context, snapshot) {
@@ -67,25 +70,19 @@ class ControlButtons extends StatelessWidget {
               );
             },
           ),
-          StreamBuilder<SequenceState?>(
-            stream: player.sequenceStateStream,
-            builder: (context, snapshot) => IconButton(
-                splashColor: Colors.white,
-                iconSize: 44.0,
-                icon: const Icon(
-                  Icons.skip_next_rounded,
-                  color: Colors.white,
-                ),
-              onPressed: () async {
-                Logger().d(
-                    "player.hasPrevious: ${player.hasPrevious}, controller.hasPrevious: ${c.hasPrevious}");
-                player.hasPrevious
-                    ? await player.seekToPrevious()
-                    : player.seek(Duration.zero, index: 0);
-                c.update();
-              },
+
+          // Next Button
+          IconButton(
+            splashColor: Colors.white,
+            iconSize: 44.0,
+            icon: const Icon(
+              Icons.skip_next_rounded,
+              color: Colors.white,
             ),
+            onPressed: () => _skipNext(player, c),
           ),
+
+          // Play/Pause Button
           StreamBuilder<PlayerState>(
             stream: player.playerStateStream,
             builder: (context, snapshot) {
@@ -115,33 +112,65 @@ class ControlButtons extends StatelessWidget {
               } else {
                 return IconButton(
                   icon: const Icon(Icons.replay),
-                  iconSize: 64.0,
+                  iconSize: 22.0,
                   onPressed: () => player.seek(Duration.zero,
-                      index: player.effectiveIndices!.first),
+                      index: player.effectiveIndices?.first ?? 0),
                 );
               }
             },
           ),
-          StreamBuilder<SequenceState?>(
-            stream: player.sequenceStateStream,
-            builder: (context, snapshot) => IconButton(
-                icon: const Icon(Icons.skip_previous_rounded),
-                iconSize: 44.0,
-                splashColor: Colors.white,
-                color: Colors.white,
-                onPressed: () async {
-                  Logger().d("player.hasNext : ${player.hasNext}");
-                  player.hasNext
-                      ? await player.seekToNext()
-                      : player.seek(Duration.zero, index: 0);
-                  c.update();
-                }),
-          ),
-          VolumeControlScreen()
 
-          // const VolumeControlScreen(),
+          // Previous Button
+          IconButton(
+            icon: const Icon(Icons.skip_previous_rounded),
+            iconSize: 44.0,
+            splashColor: Colors.white,
+            color: Colors.white,
+            onPressed: () => _skipPrevious(player, c),
+          ),
+
+          // Volume Control
+          VolumeControlScreen(),
         ],
       ),
     );
+  }
+
+  void _skipNext(AudioPlayer player, AudioPlayerController controller) async {
+    Logger().d(
+        "player.hasNext: ${player.hasNext}, controller.hasNext: ${controller.hasNext}");
+    if (player.hasNext) {
+      await player.seekToNext();
+      controller.updateTitle(); // Ensure title is updated here
+    } else {
+      await player.seek(Duration.zero, index: 0);
+    }
+    _updateCurrentMediaItem(player, controller);
+  }
+
+  void _skipPrevious(
+      AudioPlayer player, AudioPlayerController controller) async {
+    Logger().d(
+        "player.hasPrevious: ${player.hasPrevious}, controller.hasPrevious: ${controller.hasPrevious}");
+    if (player.hasPrevious) {
+      await player.seekToPrevious();
+      controller.updateTitle(); // Ensure title is updated here
+    } else {
+      await player.seek(Duration.zero, index: 0);
+    }
+    _updateCurrentMediaItem(player, controller);
+  }
+
+  void _updateCurrentMediaItem(
+      AudioPlayer player, AudioPlayerController controller) {
+    final index =
+        controller.currentIndex.value; // Use controller's reactive index
+    if (index >= 0 && index < controller.mediaPlaylist.length) {
+      controller.currentMediaItem.value = controller.mediaPlaylist[index];
+      Logger()
+          .i("Updated Media Item: ${controller.currentMediaItem.value?.title}");
+    } else {
+      Logger().w("Invalid index: $index");
+    }
   }
 }

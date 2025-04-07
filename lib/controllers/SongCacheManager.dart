@@ -20,7 +20,34 @@ class SongCacheManager {
     }
   }
 
-  // Retrieve cached song file info
+  Future<void> downloadAndSaveSongToLocation(
+      String fileId, String saveDirectoryPath, String fileExtension) async {
+    final songUrl = 'https://drive.google.com/uc?export=download&id=$fileId';
+
+    try {
+      // Create the directory if it doesn't exist
+      final saveDirectory = Directory(saveDirectoryPath);
+      if (!await saveDirectory.exists()) {
+        await saveDirectory.create(recursive: true);
+      }
+
+      // File path for the song
+      final filePath = '${saveDirectory.path}/$fileId.$fileExtension';
+
+      // Download the file and save it to the specified location
+      final response = await HttpClient().getUrl(Uri.parse(songUrl));
+      final file = await response.close().then((res) async {
+        final file = File(filePath);
+        await res.pipe(file.openWrite());
+        return file;
+      });
+
+      print('Song downloaded and saved at: ${file.path}');
+    } catch (e) {
+      print('Error downloading or saving song: $e');
+    }
+  } // Retrieve cached song file info
+
   Future<FileInfo?> getCachedSong(String fileId) async {
     final songUrl = 'https://drive.google.com/uc?export=download&id=$fileId';
     try {

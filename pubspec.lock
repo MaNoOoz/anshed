@@ -285,14 +285,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
-  idb_shim:
-    dependency: transitive
-    description:
-      name: idb_shim
-      sha256: cf1b3870ad63a6f5393edb351a9c9364e739731f2176c27f44d9645327c2cdd5
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.2"
   intl:
     dependency: transitive
     description:
@@ -445,38 +437,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  package_info_plus:
-    dependency: transitive
-    description:
-      name: package_info_plus
-      sha256: "88bc797f44a94814f2213db1c9bd5badebafdfb8290ca9f78d4b9ee2a3db4d79"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.1"
-  package_info_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: package_info_plus_platform_interface
-      sha256: "9bc8ba46813a4cc42c66ab781470711781940780fd8beddd0c3da62506d3a6c6"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.1"
-  parse_server_sdk:
-    dependency: transitive
-    description:
-      name: parse_server_sdk
-      sha256: "15187f1030704c1842b02a6e0f398bfe1e1c46572deac192552ce83438b4ed69"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.4.0"
-  parse_server_sdk_flutter:
-    dependency: "direct main"
-    description:
-      name: parse_server_sdk_flutter
-      sha256: "816c5b67636431849a3e0a03f8c4c1e7a115f0180e77773cc91a6032e5a4f42f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "9.0.0"
   path:
     dependency: transitive
     description:
@@ -637,22 +597,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
-  sembast:
-    dependency: transitive
-    description:
-      name: sembast
-      sha256: b3dde17154b2233d039fe3c386871d2ccddb4f31e058502c4036b03858e2ff5f
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.8.1+1"
-  sembast_web:
-    dependency: transitive
-    description:
-      name: sembast_web
-      sha256: "1ba0402b9491b76312358ec3cb3a33b9fc22eb673d4f9a3e99b2425135add72c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
   share_plus:
     dependency: "direct main"
     description:
@@ -842,14 +786,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.4"
-  timezone:
-    dependency: transitive
-    description:
-      name: timezone
-      sha256: "2236ec079a174ce07434e89fcd3fcda430025eb7692244139a9cf54fdcf1fc7d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.4"
   typed_data:
     dependency: transitive
     description:
@@ -858,14 +794,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  universal_io:
-    dependency: transitive
-    description:
-      name: universal_io
-      sha256: "1722b2dcc462b4b2f3ee7d188dad008b6eb4c40bbd03a3de451d82c78bba9aad"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.2"
   url_launcher:
     dependency: "direct main"
     description:
@@ -962,14 +890,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.2"
-  web_socket_channel:
-    dependency: transitive
-    description:
-      name: web_socket_channel
-      sha256: "939ab60734a4f8fa95feacb55804fa278de28bdeef38e616dc08e44a84adea23"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.3"
   webview_flutter:
     dependency: transitive
     description:
@@ -1026,14 +946,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  xxtea:
-    dependency: transitive
-    description:
-      name: xxtea
-      sha256: edd57229638e16e88f4bb299737fe76a235d0f11da6df8573b3c7f28dec283ce
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
 sdks:
   dart: ">=3.7.0-0 <4.0.0"
   flutter: ">=3.27.0"

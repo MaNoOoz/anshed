@@ -1,7 +1,7 @@
 import 'package:anshed/widgets/text_styles.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/simple/get_state.dart';
+import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
 import '../controllers/PlayerController.dart';
@@ -22,12 +22,18 @@ class SongTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<AudioPlayerController>(
-      builder: (AudioPlayerController controller) {
-        final bool isPlaying = mediaItem.id == controller.currentMediaItem?.id;
+    final controller = Get.find<AudioPlayerController>();
 
-        return Container(
-          color: isPlaying ? Colors.green.shade500 : Colors.transparent,
+    return Obx(() {
+      // Check if this song is the currently playing song
+      final bool isPlaying =
+          mediaItem.id == controller.currentMediaItem.value?.id;
+
+      return Container(
+        color: isPlaying ? Colors.green.shade500 : Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onAddToPlaylist,
           child: ListTile(
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(8),
@@ -39,7 +45,10 @@ class SongTile extends StatelessWidget {
                 errorBuilder: (_, __, ___) => Image.asset('assets/s.png'),
               ),
             ),
-            title: Text(mediaItem.title, style: textStyle(context)),
+            title: Text(
+              mediaItem.title,
+              style: textStyle(context),
+            ),
             subtitle: Text(
               mediaItem.artist ?? 'Unknown Artist',
               style: smallTextStyle(context),
@@ -55,6 +64,8 @@ class SongTile extends StatelessWidget {
                       return const Icon(Icons.memory, color: Colors.white);
                     } else if (snapshot.hasError) {
                       return const Icon(Icons.error_outline);
+                    } else if (snapshot.data == false) {
+                      return const SizedBox();
                     } else {
                       return const CircularProgressIndicator();
                     }
@@ -62,17 +73,9 @@ class SongTile extends StatelessWidget {
                 ),
               ],
             ),
-            onTap: () async {
-              int clickedIndex = index;
-              logger.i('Clicked index: $clickedIndex');
-              await controller.playPlaylist(controller.mediaPlaylist,
-                  startIndex: clickedIndex);
-
-              // No need for controller.update(); here
-            },
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   }
 }
