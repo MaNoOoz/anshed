@@ -5,25 +5,30 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
+import '../controllers/AdController.dart';
 import '../controllers/PlayerController.dart';
+import '../widgets/BannerAdWidget.dart';
 import '../widgets/SongTile.dart';
 
 class HomeScreen extends StatelessWidget {
   final AudioPlayerController _audioController =
       Get.find<AudioPlayerController>();
+  final AdController adController = Get.put(AdController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _audioController.createAudioSourcesFromCacheOrApi();
-        },
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () async {
+      //   },
+      //   child: Icon(Icons.ad_units),
+      // ),
       appBar: AppBar(
         actions: [
           IconButton(
             onPressed: () async {
+              adController.showInterstitialAd();
+
               Get.to(() => SettingsScreen());
             },
             icon: Icon(Icons.settings),
@@ -40,6 +45,7 @@ class HomeScreen extends StatelessWidget {
           Expanded(child: Obx(() {
             return _buildPlaylist();
           })),
+          BannerAdWidget(),
           PlayerModal()
         ],
       ),

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:anshed/views/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
+import 'controllers/AdController.dart';
 import 'controllers/PlayerController.dart';
 import 'controllers/SettingsController.dart';
 import 'controllers/SongCacheManager.dart';
@@ -15,17 +17,18 @@ const appId = 'sXNSN01jZLzR5m5';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   // unawaited(MobileAds.instance.initialize()); // Add your test device ID here
-  // // Create a new RequestConfiguration with the desired settings
-  // RequestConfiguration requestConfiguration = RequestConfiguration(
-  //   testDeviceIds: ["387845A5FCBC0B2B29189CEAC8B80EC7"],
-  //   // Replace with your test device IDs if needed
-  //   tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
-  //   // Set as needed
-  //   maxAdContentRating: MaxAdContentRating.g, // Set as needed
-  // );
-  // // Update the request configuration
-  // MobileAds.instance.updateRequestConfiguration(requestConfiguration);
+  // // // Create a new RequestConfiguration with the desired settings
+  // // RequestConfiguration requestConfiguration = RequestConfiguration(
+  // //   testDeviceIds: ["387845A5FCBC0B2B29189CEAC8B80EC7"],
+  // //   // Replace with your test device IDs if needed
+  // //   tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
+  // //   // Set as needed
+  // //   maxAdContentRating: MaxAdContentRating.g, // Set as needed
+  // // );
+  // // // Update the request configuration
+  // // MobileAds.instance.updateRequestConfiguration(requestConfiguration);
   // Initialize any necessary services
   final SongService songService = SongService();
   final SongCacheManager songCacheManager = SongCacheManager();
@@ -45,7 +48,7 @@ Future<void> main() async {
   );
   Get.put(AudioPlayerController(songService,
       songCacheManager)); // Or Get.lazyPut(() => PlayerController());
-  // Get.put(AdController()); // Or Get.lazyPut(() => PlayerController());
+  Get.put(AdController()); // Or Get.lazyPut(() => PlayerController());
 
   runApp(MyApp());
 }
